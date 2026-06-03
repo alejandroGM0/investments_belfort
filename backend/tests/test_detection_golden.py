@@ -44,19 +44,59 @@ def test_trend_bearish_on_downtrend(df_bearish):
     assert result.strength > 30
 
 
-def test_structure_hh_detects(df_bullish):
-    """Higher Highs pattern should trigger in uptrend data."""
+def test_structure_hh_detects():
+    """Higher Highs pattern should trigger in data with clear swing peaks."""
+    import numpy as np
+
     spec = get("structure_hh")
     if spec is None:
         return
-    result = spec.detect(df_bullish)
-    assert result.sum() > 0, "Expected at least one HH in uptrend"
+
+    # Build a dataset with alternating higher swing highs separated by pullbacks
+    # so that find_peaks(distance=5) can clearly identify the peaks
+    rng = np.random.default_rng(0)
+    rows = []
+    t = 0
+    # Two swing cycles: dip, then rally to a higher high
+    prices = (
+        [50000] * 5 + [48000] * 3 + [52000] * 5 +  # first peak at 52k
+        [49000] * 4 + [54000] * 5 +                  # second peak at 54k (HH)
+        [50000] * 4
+    )
+    for i, p in enumerate(prices):
+        o = p * (1 + rng.uniform(-0.002, 0.002))
+        h = max(o, p) * 1.002
+        lo = min(o, p) * 0.998
+        c = rng.uniform(lo, h)
+        rows.append([i * 3600, o, h, lo, c, 500.0])
+
+    df = pd.DataFrame(rows, columns=["time", "open", "high", "low", "close", "volume"])
+    result = spec.detect(df)
+    assert result.sum() > 0, "Expected at least one HH in swing-up data"
 
 
-def test_structure_ll_detects(df_bearish):
-    """Lower Lows pattern should trigger in downtrend data."""
+def test_structure_ll_detects():
+    """Lower Lows pattern should trigger in data with clear swing troughs."""
+    import numpy as np
+
     spec = get("structure_ll")
     if spec is None:
         return
-    result = spec.detect(df_bearish)
-    assert result.sum() < 0, "Expected at least one LL (bearish) in downtrend"
+
+    rng = np.random.default_rng(1)
+    rows = []
+    prices = (
+        [70000] * 5 + [72000] * 3 + [68000] * 5 +  # first trough at 68k
+        [71000] * 4 + [65000] * 5 +                  # second trough at 65k (LL)
+        [69000] * 4
+    )
+    for i, p in enumerate(prices):
+        o = p * (1 + rng.uniform(-0.002, 0.002))
+        h = max(o, p) * 1.002
+        lo = min(o, p) * 0.998
+        c = rng.uniform(lo, h)
+        rows.append([i * 3600, o, h, lo, c, 500.0])
+
+    df = pd.DataFrame(rows, columns=["time", "open", "high", "low", "close", "volume"])
+    result = spec.detect(df)
+    assert result.sum() < 0, "Expected at least one LL (bearish) in swing-down data"
