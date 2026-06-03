@@ -1,0 +1,24 @@
+{
+  "count": 2,
+  "next": null,
+  "results": [
+    {
+      "id": 1001,
+      "title": "Bitcoin ETF inflows hit new record",
+      "url": "https://example.com/btc-etf",
+      "published_at": "2026-06-03T10:00:00Z",
+      "source": { "title": "CoinDesk", "domain": "coindesk.com" },
+      "votes": { "positive": 12, "negative": 2, "important": 5, "liked": 0, "disliked": 0, "lol": 0, "toxic": 0, "saved": 0, "comments": 3 },
+      "description": "Institutional demand continues to drive BTC higher."
+    },
+    {
+      "id": 1002,
+      "title": "Exchange reports security incident",
+      "url": "https://example.com/exploit",
+      "published_at": "2026-06-03T08:00:00Z",
+      "source": { "title": "CryptoPanic", "domain": "cryptopanic.com" },
+      "votes": { "positive": 1, "negative": 15, "important": 8, "liked": 0, "disliked": 0, "lol": 0, "toxic": 1, "saved": 0, "comments": 10 },
+      "description": "Users advised to withdraw funds pending audit."
+    }
+  ]
+}

@@ -1,0 +1,361 @@
+{
+  "symbol": "BTC",
+  "tf": "4h",
+  "updated_at": "2026-06-03T10:30:00Z",
+  "summary": {
+    "trend": "bullish",
+    "trend_strength": 72,
+    "confluence_score": 78,
+    "highlights": [
+      {
+        "id": "eng_1",
+        "name": "Engulfing Alcista",
+        "category": "candles",
+        "direction": "bull",
+        "bar_time": 1748909400,
+        "confidence": 0.87,
+        "active": true,
+        "description": "Vela alcista que envuelve completamente la vela anterior bajista.",
+        "tf": "4h",
+        "highlight": true
+      },
+      {
+        "id": "tri_1",
+        "name": "Triángulo Ascendente",
+        "category": "chart_patterns",
+        "direction": "bull",
+        "bar_time": 1748880600,
+        "confidence": 0.74,
+        "active": true,
+        "description": "Figura de continuación alcista con resistencia plana y soporte ascendente.",
+        "tf": "4h",
+        "highlight": true
+      },
+      {
+        "id": "rsi_1",
+        "name": "RSI en zona neutral-alcista",
+        "category": "indicators",
+        "direction": "bull",
+        "bar_time": 1748909400,
+        "confidence": 0.70,
+        "active": true,
+        "description": "RSI en 58, saliendo de zona neutral hacia territorio alcista.",
+        "tf": "4h",
+        "highlight": true
+      },
+      {
+        "id": "bos_1",
+        "name": "Break of Structure (BOS)",
+        "category": "structure",
+        "direction": "bull",
+        "bar_time": 1748894400,
+        "confidence": 0.82,
+        "active": true,
+        "description": "Rotura de máximo anterior confirmando cambio de estructura.",
+        "tf": "4h",
+        "highlight": true
+      },
+      {
+        "id": "macd_1",
+        "name": "Cruce MACD Alcista",
+        "category": "indicators",
+        "direction": "bull",
+        "bar_time": 1748894400,
+        "confidence": 0.76,
+        "active": true,
+        "description": "MACD cruza por encima de la señal con histograma positivo.",
+        "tf": "4h",
+        "highlight": true
+      }
+    ],
+    "trade_setup": {
+      "entry": 67200,
+      "stop_loss": 65800,
+      "take_profit": 70000,
+      "risk_reward": 2.0,
+      "direction": "bullish"
+    },
+    "timeframe_analysis": {
+      "1D": { "trend": "bullish", "strength": 80 },
+      "4h": { "trend": "bullish", "strength": 72 },
+      "1h": { "trend": "neutral", "strength": 45 }
+    }
+  },
+  "groups": [
+    {
+      "category": "candles",
+      "count": 8,
+      "items": [
+        {
+          "id": "eng_1",
+          "name": "Engulfing Alcista",
+          "category": "candles",
+          "direction": "bull",
+          "bar_time": 1748909400,
+          "confidence": 0.87,
+          "active": true,
+          "description": "Vela alcista que envuelve completamente la vela bajista anterior.",
+          "tf": "4h",
+          "highlight": true
+        },
+        {
+          "id": "ham_1",
+          "name": "Martillo",
+          "category": "candles",
+          "direction": "bull",
+          "bar_time": 1748865600,
+          "confidence": 0.72,
+          "active": false,
+          "description": "Cuerpo pequeño en la parte superior con mecha inferior larga.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "doji_1",
+          "name": "Doji",
+          "category": "candles",
+          "direction": "neutral",
+          "bar_time": 1748851200,
+          "confidence": 0.65,
+          "active": false,
+          "description": "Apertura y cierre casi iguales indicando indecisión.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "sol_1",
+          "name": "Tres Soldados Blancos",
+          "category": "candles",
+          "direction": "bull",
+          "bar_time": 1748822400,
+          "confidence": 0.81,
+          "active": false,
+          "description": "Tres velas alcistas consecutivas de cuerpo grande.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "ms_1",
+          "name": "Morning Star",
+          "category": "candles",
+          "direction": "bull",
+          "bar_time": 1748793600,
+          "confidence": 0.78,
+          "active": false,
+          "description": "Patrón de reversión de tres velas: bajista, indecisa, alcista.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "har_1",
+          "name": "Harami Alcista",
+          "category": "candles",
+          "direction": "bull",
+          "bar_time": 1748764800,
+          "confidence": 0.60,
+          "active": false,
+          "description": "Vela pequeña alcista dentro del cuerpo de la bajista anterior.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "pier_1",
+          "name": "Piercing Line",
+          "category": "candles",
+          "direction": "bull",
+          "bar_time": 1748736000,
+          "confidence": 0.68,
+          "active": false,
+          "description": "Cierre alcista que penetra más del 50% de la vela bajista.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "inv_1",
+          "name": "Martillo Invertido",
+          "category": "candles",
+          "direction": "bull",
+          "bar_time": 1748707200,
+          "confidence": 0.61,
+          "active": false,
+          "description": "Cuerpo pequeño con mecha superior larga, señal de reversión.",
+          "tf": "4h",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "category": "chart_patterns",
+      "count": 3,
+      "items": [
+        {
+          "id": "tri_1",
+          "name": "Triángulo Ascendente",
+          "category": "chart_patterns",
+          "direction": "bull",
+          "bar_time": 1748880600,
+          "confidence": 0.74,
+          "active": true,
+          "description": "Figura de continuación alcista con resistencia plana y soporte ascendente.",
+          "tf": "4h",
+          "highlight": true
+        },
+        {
+          "id": "flag_1",
+          "name": "Bandera Alcista",
+          "category": "chart_patterns",
+          "direction": "bull",
+          "bar_time": 1748822400,
+          "confidence": 0.68,
+          "active": false,
+          "description": "Consolidación en canal bajista tras impulso alcista fuerte.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "dt_1",
+          "name": "Doble Suelo (en formación)",
+          "category": "chart_patterns",
+          "direction": "bull",
+          "bar_time": 1748793600,
+          "confidence": 0.63,
+          "active": false,
+          "description": "Dos mínimos similares indicando posible reversión al alza.",
+          "tf": "4h",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "category": "structure",
+      "count": 2,
+      "items": [
+        {
+          "id": "bos_1",
+          "name": "Break of Structure (BOS)",
+          "category": "structure",
+          "direction": "bull",
+          "bar_time": 1748894400,
+          "confidence": 0.82,
+          "active": true,
+          "description": "Rotura de máximo anterior confirmando continuación alcista.",
+          "tf": "4h",
+          "highlight": true
+        },
+        {
+          "id": "hh_1",
+          "name": "Higher High / Higher Low",
+          "category": "structure",
+          "direction": "bull",
+          "bar_time": 1748865600,
+          "confidence": 0.85,
+          "active": true,
+          "description": "Secuencia de máximos y mínimos ascendentes confirmando tendencia.",
+          "tf": "4h",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "category": "indicators",
+      "count": 6,
+      "items": [
+        {
+          "id": "rsi_1",
+          "name": "RSI (14)",
+          "category": "indicators",
+          "direction": "bull",
+          "bar_time": 1748909400,
+          "confidence": 0.70,
+          "active": true,
+          "description": "RSI en 58, zona neutral-alcista sin sobrecompra.",
+          "tf": "4h",
+          "highlight": true
+        },
+        {
+          "id": "macd_1",
+          "name": "Cruce MACD",
+          "category": "indicators",
+          "direction": "bull",
+          "bar_time": 1748894400,
+          "confidence": 0.76,
+          "active": true,
+          "description": "MACD cruza la señal al alza con momentum positivo.",
+          "tf": "4h",
+          "highlight": true
+        },
+        {
+          "id": "adx_1",
+          "name": "ADX Tendencia Fuerte",
+          "category": "indicators",
+          "direction": "bull",
+          "bar_time": 1748909400,
+          "confidence": 0.73,
+          "active": true,
+          "description": "ADX en 28, tendencia moderadamente fuerte.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "bb_1",
+          "name": "BB - Precio sobre media",
+          "category": "indicators",
+          "direction": "bull",
+          "bar_time": 1748909400,
+          "confidence": 0.65,
+          "active": true,
+          "description": "Precio por encima de la media de Bollinger (20).",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "obv_1",
+          "name": "OBV Alcista",
+          "category": "indicators",
+          "direction": "bull",
+          "bar_time": 1748909400,
+          "confidence": 0.72,
+          "active": true,
+          "description": "On-Balance Volume con tendencia alcista confirmando precio.",
+          "tf": "4h",
+          "highlight": false
+        },
+        {
+          "id": "vwap_1",
+          "name": "Precio sobre VWAP",
+          "category": "indicators",
+          "direction": "bull",
+          "bar_time": 1748909400,
+          "confidence": 0.68,
+          "active": true,
+          "description": "Precio cotiza por encima del VWAP diario.",
+          "tf": "4h",
+          "highlight": false
+        }
+      ]
+    }
+  ],
+  "indicators": [
+    { "name": "RSI (14)", "value": 58.4, "signal": "bullish", "zone": "neutral", "description": "Relative Strength Index" },
+    { "name": "MACD", "value": 142.3, "signal": "bullish", "zone": "neutral", "description": "Moving Average Convergence Divergence" },
+    { "name": "ADX (14)", "value": 28.1, "signal": "bullish", "zone": "neutral", "description": "Average Directional Index" },
+    { "name": "Stoch RSI", "value": 72.5, "signal": "neutral", "zone": "overbought", "description": "Stochastic RSI" },
+    { "name": "ATR (14)", "value": 1420.0, "signal": "neutral", "zone": "neutral", "description": "Average True Range" },
+    { "name": "BB Width", "value": 0.042, "signal": "neutral", "zone": "neutral", "description": "Bollinger Bands Width" },
+    { "name": "OBV", "value": 9823450000, "signal": "bullish", "zone": "neutral", "description": "On-Balance Volume" },
+    { "name": "VWAP", "value": 66800, "signal": "bullish", "zone": "neutral", "description": "Volume Weighted Average Price" }
+  ],
+  "levels": [
+    { "price": 65800, "type": "support", "strength": 0.85 },
+    { "price": 64200, "type": "support", "strength": 0.72 },
+    { "price": 62500, "type": "support", "strength": 0.90 },
+    { "price": 68500, "type": "resistance", "strength": 0.78 },
+    { "price": 70000, "type": "resistance", "strength": 0.92 },
+    { "price": 73000, "type": "resistance", "strength": 0.82 }
+  ],
+  "pagination": {
+    "total": 19,
+    "page": 1,
+    "page_size": 25
+  }
+}

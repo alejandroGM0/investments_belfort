@@ -1,0 +1,665 @@
+openapi: 3.1.0
+info:
+  title: Investments Belfort API
+  version: "1.0"
+  description: API contract for the crypto investment analysis platform.
+
+servers:
+  - url: http://localhost:8000
+    description: Local gateway
+
+paths:
+  /ohlcv/{symbol}:
+    get:
+      operationId: getOhlcv
+      summary: Get OHLCV candlestick data
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 500
+      responses:
+        "200":
+          description: OHLCV data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OhlcvResponse"
+
+  /analysis/{symbol}:
+    get:
+      operationId: getAnalysis
+      summary: Get technical analysis for a symbol
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 25
+      responses:
+        "200":
+          description: Technical analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResponse"
+
+  /analysis/{symbol}/chart-markers:
+    get:
+      operationId: getChartMarkers
+      summary: Get chart annotation markers for viewport
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: from
+          in: query
+          schema:
+            type: integer
+        - name: to
+          in: query
+          schema:
+            type: integer
+        - name: min_confidence
+          in: query
+          schema:
+            type: number
+            default: 0.6
+      responses:
+        "200":
+          description: Chart markers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChartMarker"
+
+  /sentiment/{symbol}:
+    get:
+      operationId: getSentiment
+      summary: Get social sentiment for a symbol
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: window
+          in: query
+          schema:
+            type: string
+            enum: ["1h", "4h", "24h", "7d"]
+            default: "24h"
+      responses:
+        "200":
+          description: Sentiment data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentimentResponse"
+
+  /news/{symbol}:
+    get:
+      operationId: getNews
+      summary: Get news for a symbol
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sentiment
+          in: query
+          schema:
+            type: string
+            enum: ["positive", "negative", "neutral", "all"]
+            default: "all"
+      responses:
+        "200":
+          description: News items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsResponse"
+
+  /backtest/{symbol}:
+    get:
+      operationId: getBacktest
+      summary: Get backtest results for a symbol and strategy
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: strategy
+          in: query
+          schema:
+            type: string
+            default: "v1"
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+      responses:
+        "200":
+          description: Backtest results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BacktestResponse"
+
+  /ranking:
+    get:
+      operationId: getRanking
+      summary: Get ranking of crypto assets by clarity score
+      parameters:
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: symbols
+          in: query
+          schema:
+            type: string
+            description: Comma-separated list of symbols to include
+      responses:
+        "200":
+          description: Ranking list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RankingResponse"
+
+  /dashboard/{symbol}:
+    get:
+      operationId: getDashboard
+      summary: Get aggregated dashboard data for a symbol
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+
+components:
+  schemas:
+    Timeframe:
+      type: string
+      enum: ["1h", "4h", "1D", "1W"]
+
+    TrendDirection:
+      type: string
+      enum: ["bullish", "bearish", "neutral"]
+
+    PatternDirection:
+      type: string
+      enum: ["bull", "bear", "neutral"]
+
+    PatternCategory:
+      type: string
+      enum: ["candles", "chart_patterns", "trend", "structure", "indicators", "levels"]
+
+    SentimentTone:
+      type: string
+      enum: ["positive", "negative", "neutral", "mixed"]
+
+    OhlcvCandle:
+      type: object
+      required: [time, open, high, low, close, volume]
+      properties:
+        time:
+          type: integer
+          description: Unix timestamp in seconds
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: number
+
+    OhlcvResponse:
+      type: object
+      required: [symbol, tf, candles]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        candles:
+          type: array
+          items:
+            $ref: "#/components/schemas/OhlcvCandle"
+
+    PatternItem:
+      type: object
+      required: [id, name, category, direction, bar_time, confidence, active]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          $ref: "#/components/schemas/PatternCategory"
+        direction:
+          $ref: "#/components/schemas/PatternDirection"
+        bar_time:
+          type: integer
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        active:
+          type: boolean
+        description:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        highlight:
+          type: boolean
+          default: false
+
+    IndicatorItem:
+      type: object
+      required: [name, value, signal]
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        signal:
+          $ref: "#/components/schemas/TrendDirection"
+        zone:
+          type: string
+          enum: ["overbought", "oversold", "neutral"]
+        description:
+          type: string
+
+    Level:
+      type: object
+      required: [price, type, strength]
+      properties:
+        price:
+          type: number
+        type:
+          type: string
+          enum: ["support", "resistance"]
+        strength:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    TradeSetup:
+      type: object
+      properties:
+        entry:
+          type: number
+        stop_loss:
+          type: number
+        take_profit:
+          type: number
+        risk_reward:
+          type: number
+        direction:
+          $ref: "#/components/schemas/TrendDirection"
+
+    PatternGroup:
+      type: object
+      required: [category, count, items]
+      properties:
+        category:
+          $ref: "#/components/schemas/PatternCategory"
+        count:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatternItem"
+
+    AnalysisSummary:
+      type: object
+      required: [trend, confluence_score, highlights]
+      properties:
+        trend:
+          $ref: "#/components/schemas/TrendDirection"
+        trend_strength:
+          type: integer
+          minimum: 0
+          maximum: 100
+        confluence_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        highlights:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/PatternItem"
+        trade_setup:
+          $ref: "#/components/schemas/TradeSetup"
+        timeframe_analysis:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              trend:
+                $ref: "#/components/schemas/TrendDirection"
+              strength:
+                type: integer
+
+    AnalysisResponse:
+      type: object
+      required: [symbol, tf, updated_at, summary, groups, indicators, levels]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        updated_at:
+          type: string
+          format: date-time
+        summary:
+          $ref: "#/components/schemas/AnalysisSummary"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatternGroup"
+        indicators:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndicatorItem"
+        levels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Level"
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            page_size:
+              type: integer
+
+    ChartMarker:
+      type: object
+      required: [time, position, shape, color, text]
+      properties:
+        time:
+          type: integer
+        position:
+          type: string
+          enum: ["aboveBar", "belowBar", "inBar"]
+        shape:
+          type: string
+          enum: ["arrowUp", "arrowDown", "circle", "square"]
+        color:
+          type: string
+        text:
+          type: string
+        pattern_id:
+          type: string
+
+    SentimentDataPoint:
+      type: object
+      required: [time, score, mentions]
+      properties:
+        time:
+          type: string
+          format: date-time
+        score:
+          type: number
+        mentions:
+          type: integer
+
+    SocialNetwork:
+      type: object
+      required: [name, score, mentions]
+      properties:
+        name:
+          type: string
+        score:
+          type: number
+        mentions:
+          type: integer
+
+    SentimentResponse:
+      type: object
+      required: [symbol, score, tone, mentions_24h, updated_at]
+      properties:
+        symbol:
+          type: string
+        score:
+          type: number
+          minimum: -100
+          maximum: 100
+        tone:
+          $ref: "#/components/schemas/SentimentTone"
+        mentions_24h:
+          type: integer
+        mentions_7d:
+          type: integer
+        trend:
+          $ref: "#/components/schemas/TrendDirection"
+        networks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialNetwork"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/SentimentDataPoint"
+        updated_at:
+          type: string
+          format: date-time
+
+    NewsItem:
+      type: object
+      required: [id, title, source, published_at, tone, url]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        source:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        tone:
+          $ref: "#/components/schemas/SentimentTone"
+        sentiment_score:
+          type: number
+        summary:
+          type: string
+        url:
+          type: string
+
+    NewsResponse:
+      type: object
+      required: [symbol, items, summary, updated_at]
+      properties:
+        symbol:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NewsItem"
+        summary:
+          type: object
+          properties:
+            positive:
+              type: integer
+            negative:
+              type: integer
+            neutral:
+              type: integer
+            overall_tone:
+              $ref: "#/components/schemas/SentimentTone"
+        updated_at:
+          type: string
+          format: date-time
+
+    EquityPoint:
+      type: object
+      required: [date, value]
+      properties:
+        date:
+          type: string
+        value:
+          type: number
+
+    BacktestResponse:
+      type: object
+      required: [symbol, strategy, tf, metrics, updated_at]
+      properties:
+        symbol:
+          type: string
+        strategy:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        metrics:
+          type: object
+          required: [total_trades, win_rate, profit_factor, max_drawdown, sharpe]
+          properties:
+            total_trades:
+              type: integer
+            win_rate:
+              type: number
+            profit_factor:
+              type: number
+            max_drawdown:
+              type: number
+            sharpe:
+              type: number
+            avg_return:
+              type: number
+        equity_curve:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquityPoint"
+        updated_at:
+          type: string
+          format: date-time
+
+    RankingItem:
+      type: object
+      required: [rank, symbol, confluence_score, trend, active_patterns]
+      properties:
+        rank:
+          type: integer
+        symbol:
+          type: string
+        confluence_score:
+          type: integer
+        trend:
+          $ref: "#/components/schemas/TrendDirection"
+        active_patterns:
+          type: integer
+        sentiment_score:
+          type: number
+        news_tone:
+          $ref: "#/components/schemas/SentimentTone"
+        win_rate:
+          type: number
+        price:
+          type: number
+        price_change_24h:
+          type: number
+
+    RankingResponse:
+      type: object
+      required: [tf, items, updated_at]
+      properties:
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RankingItem"
+        updated_at:
+          type: string
+          format: date-time
+
+    DashboardResponse:
+      type: object
+      required: [symbol, tf, combined_score, technical, updated_at]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        combined_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        technical:
+          $ref: "#/components/schemas/AnalysisSummary"
+        sentiment:
+          $ref: "#/components/schemas/SentimentResponse"
+        news:
+          $ref: "#/components/schemas/NewsResponse"
+        backtest:
+          $ref: "#/components/schemas/BacktestResponse"
+        disclaimer:
+          type: string
+        updated_at:
+          type: string
+          format: date-time

@@ -1,0 +1,92 @@
+{
+  "symbol": "BTC",
+  "items": [
+    {
+      "id": "n1",
+      "title": "BlackRock aumenta posición en ETF de Bitcoin superando los $20B en AUM",
+      "source": "CoinDesk",
+      "published_at": "2026-06-03T09:15:00Z",
+      "tone": "positive",
+      "sentiment_score": 0.82,
+      "summary": "El fondo IBIT de BlackRock supera los 20.000 millones de dólares en activos bajo gestión.",
+      "url": "https://coindesk.com/mock"
+    },
+    {
+      "id": "n2",
+      "title": "Reserva Federal mantiene tipos de interés estables en junio",
+      "source": "Reuters",
+      "published_at": "2026-06-03T08:00:00Z",
+      "tone": "positive",
+      "sentiment_score": 0.61,
+      "summary": "La Fed mantiene los tipos en el 4.75%, alivio para activos de riesgo.",
+      "url": "https://reuters.com/mock"
+    },
+    {
+      "id": "n3",
+      "title": "Exchange XYZ sufre exploit de $50M en contratos inteligentes",
+      "source": "CryptoPanic",
+      "published_at": "2026-06-03T06:30:00Z",
+      "tone": "negative",
+      "sentiment_score": -0.88,
+      "summary": "Un fallo en contratos inteligentes permite drenaje de fondos.",
+      "url": "https://cryptopanic.com/mock"
+    },
+    {
+      "id": "n4",
+      "title": "El Salvador amplía reservas de Bitcoin con 100 BTC adicionales",
+      "source": "Bitcoin Magazine",
+      "published_at": "2026-06-03T05:00:00Z",
+      "tone": "positive",
+      "sentiment_score": 0.74,
+      "summary": "El gobierno de El Salvador sigue acumulando BTC en su tesorería nacional.",
+      "url": "https://bitcoinmagazine.com/mock"
+    },
+    {
+      "id": "n5",
+      "title": "Regulador europeo propone nuevas restricciones a stablecoins",
+      "source": "The Block",
+      "published_at": "2026-06-02T22:00:00Z",
+      "tone": "negative",
+      "sentiment_score": -0.55,
+      "summary": "La ESMA podría limitar el uso de stablecoins no reguladas en la UE.",
+      "url": "https://theblock.com/mock"
+    },
+    {
+      "id": "n6",
+      "title": "Análisis técnico: Bitcoin consolida por encima de $65K preparando el siguiente impulso",
+      "source": "Cointelegraph",
+      "published_at": "2026-06-02T20:00:00Z",
+      "tone": "positive",
+      "sentiment_score": 0.68,
+      "summary": "Analistas ven la consolidación actual como acumulación antes de nuevo ATH.",
+      "url": "https://cointelegraph.com/mock"
+    },
+    {
+      "id": "n7",
+      "title": "Volumen on-chain de Bitcoin alcanza máximo de 3 meses",
+      "source": "Glassnode",
+      "published_at": "2026-06-02T18:00:00Z",
+      "tone": "positive",
+      "sentiment_score": 0.70,
+      "summary": "El volumen transferido en la red Bitcoin alcanza niveles no vistos desde febrero.",
+      "url": "https://glassnode.com/mock"
+    },
+    {
+      "id": "n8",
+      "title": "Mineros de Bitcoin aumentan hashrate a nuevos máximos históricos",
+      "source": "Hashrateindex",
+      "published_at": "2026-06-02T14:00:00Z",
+      "tone": "neutral",
+      "sentiment_score": 0.20,
+      "summary": "El hashrate de Bitcoin supera los 800 EH/s por primera vez.",
+      "url": "https://hashrateindex.com/mock"
+    }
+  ],
+  "summary": {
+    "positive": 5,
+    "negative": 2,
+    "neutral": 1,
+    "overall_tone": "positive"
+  },
+  "updated_at": "2026-06-03T10:30:00Z"
+}
