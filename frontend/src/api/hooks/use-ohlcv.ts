@@ -2,13 +2,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import type { Timeframe } from "@/lib/env";
+import { toApiSymbol } from "@/lib/symbols";
 
 export function useOhlcv(symbol: string, tf: Timeframe, limit = 500) {
+  const apiSymbol = toApiSymbol(symbol);
   return useQuery({
-    queryKey: ["ohlcv", symbol, tf, limit],
+    queryKey: ["ohlcv", apiSymbol, tf, limit],
     queryFn: async () => {
       const { data, error } = await api.GET("/ohlcv/{symbol}", {
-        params: { path: { symbol }, query: { tf, limit } },
+        params: { path: { symbol: apiSymbol }, query: { tf, limit } },
       });
       if (error) throw error;
       return data;

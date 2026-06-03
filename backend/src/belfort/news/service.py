@@ -1,4 +1,4 @@
-"""Orchestrate CryptoPanic fetch, cache, mapping, and summary."""
+"""Orchestrate news fetch (NewsAPI primary, CryptoPanic legacy), cache, mapping."""
 
 from __future__ import annotations
 
@@ -9,7 +9,9 @@ import httpx
 from belfort import config
 from belfort.news.cache import get_cached, set_cached
 from belfort.news.client import CryptoPanicClient
+from belfort.news.client_newsapi import NewsApiClient
 from belfort.news.mapper import map_post
+from belfort.news.mapper_newsapi import map_article
 from belfort.news.models import NewsItem, NewsResponse, NewsSummary, SentimentFilter, SentimentTone
 from belfort.news.symbols import get_symbol_config
 
@@ -51,6 +53,47 @@ def _filter_items(items: list[NewsItem], sentiment: SentimentFilter) -> list[New
     return [i for i in items if i.tone == sentiment]
 
 
+async def _fetch_newsapi(
+    client: httpx.AsyncClient,
+    cfg,
+    *,
+    limit: int,
+) -> list[NewsItem]:
+    na = NewsApiClient(client)
+    try:
+        raw = await na.fetch_everything(cfg.search_query, limit=limit)
+    except httpx.HTTPStatusError as e:
+        raise UpstreamError(f"NewsAPI HTTP error: {e.response.status_code}") from e
+    except httpx.RequestError as e:
+        raise UpstreamError(f"NewsAPI request failed: {e}") from e
+    except ValueError as e:
+        raise UpstreamError(str(e)) from e
+
+    items: list[NewsItem] = []
+    for art in raw.articles:
+        mapped = map_article(art)
+        if mapped:
+            items.append(mapped)
+    return items
+
+
+async def _fetch_cryptopanic(
+    client: httpx.AsyncClient,
+    cfg,
+    *,
+    limit: int,
+) -> list[NewsItem]:
+    cp = CryptoPanicClient(client)
+    try:
+        raw = await cp.fetch_posts(cfg.currency, limit=limit)
+    except httpx.HTTPStatusError as e:
+        raise UpstreamError(f"CryptoPanic API error: {e.response.status_code}") from e
+    except httpx.RequestError as e:
+        raise UpstreamError(f"CryptoPanic request failed: {e}") from e
+
+    return [map_post(p) for p in raw.results if p.title]
+
+
 async def get_news(
     client: httpx.AsyncClient,
     symbol: str,
@@ -64,9 +107,10 @@ async def get_news(
     if cfg is None:
         raise SymbolNotFoundError(f"Unknown symbol: {symbol}")
 
-    if not config.CRYPTOPANIC_API_TOKEN:
+    if not config.NEWSAPI_API_KEY and not config.CRYPTOPANIC_API_TOKEN:
         raise NoTokenError(
-            "CRYPTOPANIC_API_TOKEN is not set. Add it to backend/.env (see .env.example)."
+            "NEWSAPI_API_KEY is not set. Get a key at https://newsapi.org/register "
+            "and add it to backend/.env (see .env.example)."
         )
 
     fetch_limit = max(limit, 20) if sentiment != "all" else limit
@@ -75,15 +119,11 @@ async def get_news(
         if cached is not None:
             return cached
 
-    cp = CryptoPanicClient(client)
-    try:
-        raw = await cp.fetch_posts(cfg.currency, limit=fetch_limit)
-    except httpx.HTTPStatusError as e:
-        raise UpstreamError(f"CryptoPanic API error: {e.response.status_code}") from e
-    except httpx.RequestError as e:
-        raise UpstreamError(f"CryptoPanic request failed: {e}") from e
+    if config.NEWSAPI_API_KEY:
+        items = await _fetch_newsapi(client, cfg, limit=fetch_limit)
+    else:
+        items = await _fetch_cryptopanic(client, cfg, limit=fetch_limit)
 
-    items = [map_post(p) for p in raw.results if p.title]
     items = _filter_items(items, sentiment)[:limit]
 
     response = NewsResponse(

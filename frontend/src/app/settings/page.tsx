@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TIMEFRAMES, type Timeframe } from "@/lib/env";
-import { env } from "@/lib/env";
-import { Settings, Plus, X, Monitor } from "lucide-react";
+import { ApiStatusPanel } from "@/components/settings/api-status-panel";
+import { Settings, Plus, X } from "lucide-react";
 
 export default function SettingsPage() {
   const { watchlist, addToWatchlist, removeFromWatchlist, timeframe, setTimeframe } = useAppStore();
@@ -99,25 +99,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Dev / API Status */}
-      {env.useMocks && (
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2 text-yellow-500">
-              <Monitor className="h-4 w-4" /> Estado API (dev)
-            </CardTitle>
-            <CardDescription>Solo visible cuando NEXT_PUBLIC_USE_MOCKS=true</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {["/ohlcv", "/analysis", "/sentiment", "/news", "/backtest", "/ranking"].map((ep) => (
-              <div key={ep} className="flex items-center justify-between">
-                <code className="text-xs text-muted-foreground">{ep}</code>
-                <Badge variant="outline" className="text-yellow-500 border-yellow-500/40">Mock activo</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      <ApiStatusPanel />
     </div>
   );
 }

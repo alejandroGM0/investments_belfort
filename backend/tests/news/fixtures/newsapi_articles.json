@@ -1,0 +1,24 @@
+{
+  "status": "ok",
+  "totalResults": 2,
+  "articles": [
+    {
+      "source": { "id": "coindesk", "name": "CoinDesk" },
+      "author": "Test",
+      "title": "Bitcoin rallies as ETF inflows accelerate",
+      "description": "Institutional demand pushes BTC higher amid positive market sentiment.",
+      "url": "https://example.com/btc-rally",
+      "publishedAt": "2026-06-01T10:00:00Z",
+      "content": null
+    },
+    {
+      "source": { "id": "reuters", "name": "Reuters" },
+      "author": "Test",
+      "title": "Crypto exchange hack drains millions from users",
+      "description": "Security breach raises fears across the digital asset industry.",
+      "url": "https://example.com/hack",
+      "publishedAt": "2026-06-01T08:00:00Z",
+      "content": null
+    }
+  ]
+}

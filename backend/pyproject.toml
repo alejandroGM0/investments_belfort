@@ -36,6 +36,9 @@ dependencies = [
     "rich>=13.0",
     "mplfinance>=0.12",
 
+    # Scheduler
+    "apscheduler>=3.10",
+
     # Misc
     "python-dotenv>=1.0",
     "aiofiles>=23.0",

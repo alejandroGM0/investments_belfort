@@ -1,35 +1,26 @@
-"""belfort analyze — run technical analysis."""
+"""belfort analyze — run technical analysis (registered as a direct command in __main__)."""
 
 from __future__ import annotations
 
 import json
+from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
-app = typer.Typer(help="Run technical analysis.", no_args_is_help=True)
 console = Console()
 
 
-@app.callback(invoke_without_command=True)
 def analyze(
-    ctx: typer.Context,
-    symbol: str = typer.Argument("BTCUSDT"),
-    tf: str = typer.Option("4h", "--tf"),
-    since: str = typer.Option("2y", "--since"),
-    refresh: bool = typer.Option(False, "--refresh"),
-    as_json: bool = typer.Option(False, "--json"),
-    category: str | None = typer.Option(None, "--category", "-c"),
+    symbol: Annotated[str, typer.Argument(help="Symbol, e.g. BTCUSDT")] = "BTCUSDT",
+    tf: Annotated[str, typer.Option("--tf", help="Timeframe: 1h, 4h, 1D, 1W")] = "4h",
+    since: Annotated[str, typer.Option("--since", help="Lookback if no cache: 2y, 6m, 90d")] = "2y",
+    refresh: Annotated[bool, typer.Option("--refresh/--no-refresh", help="Refresh OHLCV from Binance")] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Output raw JSON")] = False,
+    category: Annotated[Optional[str], typer.Option("--category", "-c", help="Filter patterns by category")] = None,
 ):
-    """
-    Run the full TA analysis for SYMBOL on timeframe TF.
-
-    Outputs a summary table or JSON.
-    """
-    if ctx.invoked_subcommand:
-        return
-
+    """Run the full TA analysis for SYMBOL on timeframe TF."""
     from belfort.analysis import run
 
     with console.status(f"Analysing {symbol} [{tf}]…"):
@@ -63,11 +54,14 @@ def analyze(
             d_label = "▲ bull" if p.direction == 1 else "▼ bear"
             d_color = "green" if p.direction == 1 else "red"
             star = "★" if p.highlight else ""
-            pt.add_row(p.pattern_id, p.name, p.category, f"[{d_color}]{d_label}[/]",
-                       f"{p.confidence:.2f}", star)
+            pt.add_row(
+                p.pattern_id, p.name, p.category,
+                f"[{d_color}]{d_label}[/]",
+                f"{p.confidence:.2f}", star,
+            )
         console.print(pt)
     else:
-        console.print("[yellow]No active patterns.[/]")
+        console.print("[yellow]No active patterns detected on the last bar.[/]")
 
     # --- Key indicators ---
     if report.indicators:
@@ -98,3 +92,8 @@ def analyze(
             console.print(f"  {t}: [{col}]{v['trend']}[/] (strength {v['strength']})")
 
     console.print(f"\n[dim]Updated: {report.updated_at}[/]")
+
+
+# Expose as a Typer app for backward compat (add_typer usage in tests)
+app = typer.Typer(help="Run technical analysis.", no_args_is_help=True)
+app.command()(analyze)

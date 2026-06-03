@@ -29,6 +29,11 @@ def test_backtest_returns_structure():
     assert "metrics" in data
     assert "win_rate" in data["metrics"]
     assert "total_trades" in data["metrics"]
+    assert "status" in data
+    assert data["status"] in ("empty", "running", "ready")
+    assert "run_summary" in data
+    assert "active_job" in data
+    assert "last_job" in data
 
 
 def test_refresh_analysis_returns_job_id():

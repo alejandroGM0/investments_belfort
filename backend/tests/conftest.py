@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+import os
+import tempfile
+
 import numpy as np
 import pandas as pd
 import pytest
+
+
+def pytest_configure(config):
+    """Point belfort at temporary directories so tests don't conflict with a running server."""
+    tmp = tempfile.mkdtemp(prefix="belfort_test_")
+    os.environ.setdefault("BELFORT_DATA_DIR", tmp)
+    os.environ.setdefault("BELFORT_DB_PATH", os.path.join(tmp, "results.duckdb"))
 
 
 def _ohlcv(n: int = 100, seed: int = 42) -> pd.DataFrame:

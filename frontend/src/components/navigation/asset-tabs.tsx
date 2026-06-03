@@ -8,6 +8,7 @@ const tabs = [
   { href: "", label: "Resumen" },
   { href: "/chart", label: "Gráfico" },
   { href: "/technical", label: "Técnico" },
+  { href: "/patterns", label: "Patrones" },
   { href: "/sentiment", label: "Sentimiento" },
   { href: "/news", label: "Noticias" },
   { href: "/strategy", label: "Estrategia" },

@@ -15,12 +15,14 @@ import { LoadingSkeleton } from "@/components/feedback/loading-skeleton";
 import { ErrorState } from "@/components/feedback/error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const DEFAULT_FILTERS: PatternFilters = {
   search: "",
   category: "all",
   direction: "all",
   onlyActive: false,
+  hideInactive: false,
   minConfidence: 0,
 };
 
@@ -39,7 +41,9 @@ export default function TechnicalPage({ params }: { params: Promise<{ symbol: st
     .map((g) => ({
       ...g,
       items: g.items.filter((p) => {
-        if (filters.onlyActive && !p.active) return false;
+        const status = (p as any).status ?? (p.active ? "active" : "inactive");
+        if (filters.onlyActive && status !== "active") return false;
+        if (filters.hideInactive && status === "inactive") return false;
         if (filters.direction !== "all" && p.direction !== filters.direction) return false;
         if (filters.category !== "all" && g.category !== filters.category) return false;
         if (filters.search && !p.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
@@ -51,14 +55,24 @@ export default function TechnicalPage({ params }: { params: Promise<{ symbol: st
     .filter((g) => g.items.length > 0 || filters.category === "all");
 
   const totalPatterns = data.groups.reduce((acc, g) => acc + g.count, 0);
+  const activePatterns = data.groups.reduce((acc, g) => acc + ((g as any).active_count ?? 0), 0);
+  const recentPatterns = data.groups.reduce((acc, g) => acc + ((g as any).recent_count ?? 0), 0);
 
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-lg font-bold">Análisis Técnico</h2>
           <TrendBadge direction={data.summary.trend} />
-          <span className="text-xs text-muted-foreground">{totalPatterns} patrones detectados</span>
+          <span className="text-xs text-muted-foreground">
+            {totalPatterns} patrones
+            {activePatterns > 0 && (
+              <> · <span className="text-emerald-600 font-medium">{activePatterns} activos</span></>
+            )}
+            {recentPatterns > 0 && (
+              <> · <span className="text-amber-600">{recentPatterns} recientes</span></>
+            )}
+          </span>
         </div>
         <ConfluenceScore score={data.summary.confluence_score} size="sm" />
       </div>
@@ -75,9 +89,14 @@ export default function TechnicalPage({ params }: { params: Promise<{ symbol: st
         </TabsList>
 
         <TabsContent value="patterns" className="space-y-4 pt-4">
-          <PatternFiltersBar filters={filters} onChange={setFilters} />
+          <div className="mb-6">
+            <PatternFiltersBar filters={filters} onChange={setFilters} />
+          </div>
           {filteredGroups.length > 0 ? (
-            <PatternGroupAccordion groups={filteredGroups} maxVisible={5} />
+            <PatternGroupAccordion
+              groups={filteredGroups}
+              showInactive={!filters.hideInactive && !filters.onlyActive}
+            />
           ) : (
             <div className="rounded-xl border p-8 text-center text-sm text-muted-foreground">
               No hay patrones con los filtros actuales.

@@ -6,8 +6,11 @@ import {
   ColorType,
   CrosshairMode,
   CandlestickSeries,
+  LineSeries,
+  LineStyle,
   createSeriesMarkers,
   type IChartApi,
+  type IPriceLine,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
   type SeriesType,
@@ -15,21 +18,40 @@ import {
 } from "lightweight-charts";
 import { useTheme } from "next-themes";
 import type { components } from "@/api/types";
+import type { ChartOverlays } from "@/components/chart/chart-toolbar";
 
 type Candle = components["schemas"]["OhlcvCandle"];
 type ChartMarker = components["schemas"]["ChartMarker"];
+type ChartOverlaysData = components["schemas"]["ChartOverlaysResponse"];
 
 interface PriceChartProps {
   candles: Candle[];
   markers?: ChartMarker[];
+  overlays?: ChartOverlays;
+  overlayData?: ChartOverlaysData;
   height?: number;
 }
 
-export function PriceChart({ candles, markers = [], height = 480 }: PriceChartProps) {
+const EMA_COLORS: Record<number, string> = {
+  20: "#3b82f6",
+  50: "#a855f7",
+};
+
+export function PriceChart({
+  candles,
+  markers = [],
+  overlays = { patterns: true, levels: true, ema: false, projection: true, setup: true },
+  overlayData,
+  height = 480,
+}: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<SeriesType, Time> | null>(null);
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
+  const projectionLineRef = useRef<ISeriesApi<"Line", Time> | null>(null);
+  const projectionCandlesRef = useRef<ISeriesApi<"Candlestick", Time> | null>(null);
+  const emaSeriesRefs = useRef<ISeriesApi<"Line", Time>[]>([]);
+  const priceLineRefs = useRef<IPriceLine[]>([]);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
@@ -73,6 +95,13 @@ export function PriceChart({ candles, markers = [], height = 480 }: PriceChartPr
     return () => {
       resizeObserver.disconnect();
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+      markersRef.current = null;
+      projectionLineRef.current = null;
+      projectionCandlesRef.current = null;
+      emaSeriesRefs.current = [];
+      priceLineRefs.current = [];
     };
   }, [isDark, height]);
 
@@ -87,8 +116,9 @@ export function PriceChart({ candles, markers = [], height = 480 }: PriceChartPr
 
   useEffect(() => {
     if (!markersRef.current) return;
+    const visible = overlays.patterns ? markers : [];
     markersRef.current.setMarkers(
-      markers.map((m) => ({
+      visible.map((m) => ({
         time: m.time as Time,
         position: m.position as "aboveBar" | "belowBar" | "inBar",
         shape: m.shape as "arrowUp" | "arrowDown" | "circle" | "square",
@@ -96,7 +126,140 @@ export function PriceChart({ candles, markers = [], height = 480 }: PriceChartPr
         text: m.text,
       }))
     );
-  }, [markers]);
+  }, [markers, overlays.patterns]);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    const mainSeries = seriesRef.current;
+    if (!chart || !mainSeries) return;
+
+    for (const pl of priceLineRefs.current) {
+      mainSeries.removePriceLine(pl);
+    }
+    priceLineRefs.current = [];
+
+    if (projectionLineRef.current) {
+      chart.removeSeries(projectionLineRef.current);
+      projectionLineRef.current = null;
+    }
+    if (projectionCandlesRef.current) {
+      chart.removeSeries(projectionCandlesRef.current);
+      projectionCandlesRef.current = null;
+    }
+    for (const s of emaSeriesRefs.current) {
+      chart.removeSeries(s);
+    }
+    emaSeriesRefs.current = [];
+
+    if (!overlayData) return;
+
+    if (overlays.levels && overlayData.levels.length) {
+      for (const lv of overlayData.levels) {
+        const isSupport = lv.type === "support";
+        const pct = Math.round((lv.strength ?? 0) * 100);
+        const pl = mainSeries.createPriceLine({
+          price: lv.price,
+          color: isSupport ? "#22c55e88" : "#ef444488",
+          lineWidth: lv.strength >= 0.7 ? 2 : 1,
+          lineStyle: LineStyle.Dotted,
+          axisLabelVisible: true,
+          title: `${isSupport ? "S" : "R"} ${pct}%`,
+        });
+        priceLineRefs.current.push(pl);
+      }
+    }
+
+    const setup = overlays.setup ? overlayData.trade_setup : null;
+    if (setup?.entry != null) {
+      priceLineRefs.current.push(
+        mainSeries.createPriceLine({
+          price: setup.entry,
+          color: "#eab308",
+          lineWidth: 2,
+          lineStyle: LineStyle.Solid,
+          axisLabelVisible: true,
+          title: "Entry",
+        })
+      );
+    }
+    if (setup?.stop_loss != null) {
+      priceLineRefs.current.push(
+        mainSeries.createPriceLine({
+          price: setup.stop_loss,
+          color: "#ef4444",
+          lineWidth: 2,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: "SL",
+        })
+      );
+    }
+    if (setup?.take_profit != null) {
+      priceLineRefs.current.push(
+        mainSeries.createPriceLine({
+          price: setup.take_profit,
+          color: "#22c55e",
+          lineWidth: 2,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: "TP",
+        })
+      );
+    }
+
+    if (overlays.ema && overlayData.ema.length) {
+      for (const ema of overlayData.ema) {
+        const line = chart.addSeries(LineSeries, {
+          color: EMA_COLORS[ema.period] ?? "#64748b",
+          lineWidth: 1,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false,
+        });
+        line.setData(
+          ema.points.map((p) => ({ time: p.time as Time, value: p.value }))
+        );
+        emaSeriesRefs.current.push(line);
+      }
+    }
+
+    const projection = overlayData.projection;
+    if (overlays.projection && projection) {
+      const { path, candles: projCandles, direction } = projection;
+      const projColor =
+        direction === "bullish" ? "#8b5cf6" : direction === "bearish" ? "#f97316" : "#94a3b8";
+
+      const line = chart.addSeries(LineSeries, {
+        color: projColor,
+        lineWidth: 2,
+        lineStyle: LineStyle.LargeDashed,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        crosshairMarkerVisible: true,
+      });
+      line.setData(path.map((p) => ({ time: p.time as Time, value: p.value })));
+      projectionLineRef.current = line;
+
+      const ghost = chart.addSeries(CandlestickSeries, {
+        upColor: `${projColor}55`,
+        downColor: `${projColor}55`,
+        borderUpColor: projColor,
+        borderDownColor: projColor,
+        wickUpColor: projColor,
+        wickDownColor: projColor,
+      });
+      ghost.setData(
+        projCandles.map((c) => ({
+          time: c.time as Time,
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+        }))
+      );
+      projectionCandlesRef.current = ghost;
+    }
+  }, [overlayData, overlays.levels, overlays.ema, overlays.projection, overlays.setup]);
 
   return <div ref={containerRef} className="w-full" style={{ height }} />;
 }

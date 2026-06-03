@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from belfort.api.routes import news as news_routes
 
-FIXTURE = Path(__file__).parent / "fixtures" / "cryptopanic_posts.json"
+FIXTURE = Path(__file__).parent / "fixtures" / "newsapi_articles.json"
 
 
 @asynccontextmanager
@@ -28,13 +28,15 @@ def client():
 
 
 def test_news_no_token(client, monkeypatch):
+    monkeypatch.setattr("belfort.config.NEWSAPI_API_KEY", "")
     monkeypatch.setattr("belfort.config.CRYPTOPANIC_API_TOKEN", "")
     r = client.get("/news/BTC")
     assert r.status_code == 503
 
 
 def test_news_success(client, monkeypatch, httpx_mock):
-    monkeypatch.setattr("belfort.config.CRYPTOPANIC_API_TOKEN", "test-token")
+    monkeypatch.setattr("belfort.config.NEWSAPI_API_KEY", "test-token")
+    monkeypatch.setattr("belfort.config.CRYPTOPANIC_API_TOKEN", "")
     from belfort.news.cache import clear_cache
 
     clear_cache()

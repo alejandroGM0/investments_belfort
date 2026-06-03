@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,11 +21,20 @@ export function SymbolSelect({ navigateOnChange = false }: SymbolSelectProps) {
   const [open, setOpen] = useState(false);
   const { symbol, setSymbol } = useAppStore();
   const router = useRouter();
+  const pathname = usePathname();
 
   function handleSelect(value: string) {
     setSymbol(value);
     setOpen(false);
-    if (navigateOnChange) router.push(`/asset/${value}`);
+    if (navigateOnChange) {
+      const parts = pathname.split("/");
+      if (parts[1] === "asset" && parts[2]) {
+        parts[2] = value;
+        router.push(parts.join("/"));
+      } else {
+        router.push(`/asset/${value}`);
+      }
+    }
   }
 
   return (

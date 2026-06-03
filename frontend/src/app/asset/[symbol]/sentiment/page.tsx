@@ -6,10 +6,9 @@ import { SentimentGauge } from "@/components/sentiment/sentiment-gauge";
 import { LoadingSkeleton } from "@/components/feedback/loading-skeleton";
 import { ErrorState } from "@/components/feedback/error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Users } from "lucide-react";
 import { fmtNumber, timeAgo, cn } from "@/lib/utils";
-import { env, SENTIMENT_WINDOWS, type SentimentWindow } from "@/lib/env";
+import { SENTIMENT_WINDOWS, type SentimentWindow } from "@/lib/env";
 
 const WINDOW_LABELS: Record<SentimentWindow, string> = {
   "1h": "1h",
@@ -34,11 +33,7 @@ export default function SentimentPage({ params }: { params: Promise<{ symbol: st
         <div className="flex items-center gap-3">
           <MessageCircle className="h-5 w-5 text-muted-foreground" />
           <h2 className="text-lg font-bold">Sentimiento Social · {symbol}</h2>
-          {env.sentimentReal ? (
-            <Badge variant="outline" className="text-emerald-500 border-emerald-500/40">Datos en vivo</Badge>
-          ) : (
-            <Badge variant="outline" className="text-yellow-500 border-yellow-500/40">Mock</Badge>
-          )}
+          <span className="text-xs text-muted-foreground">Actualizado {timeAgo(data.updated_at)}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Ventana:</span>
@@ -139,7 +134,7 @@ export default function SentimentPage({ params }: { params: Promise<{ symbol: st
               {[...data.history].reverse().map((point, i) => {
                 const h = ((point.score + 100) / 200) * 100;
                 return (
-                  <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                  <div key={i} className="flex flex-1 flex-col items-center gap-1 h-full justify-end">
                     <div
                       className={`w-full rounded-sm transition-all ${point.score > 20 ? "bg-emerald-500/70" : point.score < -20 ? "bg-red-500/70" : "bg-yellow-500/70"}`}
                       style={{ height: `${Math.max(h, 5)}%` }}

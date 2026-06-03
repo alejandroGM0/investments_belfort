@@ -71,3 +71,27 @@ class CpPostsResponse(BaseModel):
     count: int | None = None
     next: str | None = None
     results: list[CpPost] = Field(default_factory=list)
+
+
+# --- NewsAPI.org shapes ---
+
+
+class NaSource(BaseModel):
+    id: str | None = None
+    name: str | None = None
+
+
+class NaArticle(BaseModel):
+    source: NaSource | None = None
+    author: str | None = None
+    title: str
+    description: str | None = None
+    url: str | None = None
+    publishedAt: datetime | None = None
+    content: str | None = None
+
+
+class NaArticlesResponse(BaseModel):
+    status: str | None = None
+    totalResults: int | None = None
+    articles: list[NaArticle] = Field(default_factory=list)

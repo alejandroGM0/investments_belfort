@@ -66,8 +66,10 @@ REDDIT_POST_LIMIT = int(os.getenv("REDDIT_POST_LIMIT", "25"))
 REDDIT_COMMENT_LIMIT = int(os.getenv("REDDIT_COMMENT_LIMIT", "50"))
 
 # ---------------------------------------------------------------------------
-# News (F3 — CryptoPanic)
+# News (F3 — NewsAPI primary, CryptoPanic optional legacy)
 # ---------------------------------------------------------------------------
+NEWSAPI_API_KEY = os.getenv("NEWSAPI_API_KEY", "")
+NEWSAPI_BASE_URL = os.getenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
 CRYPTOPANIC_API_TOKEN = os.getenv("CRYPTOPANIC_API_TOKEN", "")
 CRYPTOPANIC_BASE_URL = os.getenv("CRYPTOPANIC_BASE_URL", "https://cryptopanic.com/api/v1")
 NEWS_CACHE_TTL_SECONDS = int(os.getenv("BELFORT_NEWS_CACHE_TTL", "300"))

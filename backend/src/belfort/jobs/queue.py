@@ -2,7 +2,8 @@
 SQLite-backed lightweight job queue (no Redis required).
 
 Schema: jobs(id TEXT PK, kind TEXT, payload TEXT, status TEXT,
-             created_at TEXT, started_at TEXT, finished_at TEXT, result TEXT)
+             created_at TEXT, started_at TEXT, finished_at TEXT, result TEXT,
+             progress_current INTEGER, progress_total INTEGER, progress_message TEXT)
 """
 
 from __future__ import annotations
@@ -33,9 +34,25 @@ def _db() -> sqlite3.Connection:
             created_at   TEXT NOT NULL,
             started_at   TEXT,
             finished_at  TEXT,
-            result       TEXT
+            result       TEXT,
+            progress_current INTEGER DEFAULT 0,
+            progress_total   INTEGER DEFAULT 0,
+            progress_message TEXT DEFAULT ''
         )
     """)
+    # Migrate old tables: add columns if missing
+    try:
+        conn.execute("ALTER TABLE jobs ADD COLUMN progress_current INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE jobs ADD COLUMN progress_total INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE jobs ADD COLUMN progress_message TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
     return conn
 
@@ -63,7 +80,12 @@ def peek_next() -> dict | None:
             "SELECT * FROM jobs WHERE status='pending' ORDER BY created_at LIMIT 1"
         ).fetchone()
         conn.close()
-    return dict(row) if row else None
+    if row is None:
+        return None
+    d = dict(row)
+    d["payload"] = json.loads(d["payload"] or "{}")
+    d["result"] = json.loads(d["result"] or "null")
+    return d
 
 
 def claim(job_id: str) -> None:
@@ -102,6 +124,18 @@ def fail(job_id: str, error: str) -> None:
         conn.close()
 
 
+def update_progress(job_id: str, current: int, total: int, message: str = "") -> None:
+    """Update progress on a running job (called by handlers during execution)."""
+    with _lock:
+        conn = _db()
+        conn.execute(
+            "UPDATE jobs SET progress_current=?, progress_total=?, progress_message=? WHERE id=?",
+            [current, total, message, job_id],
+        )
+        conn.commit()
+        conn.close()
+
+
 def get(job_id: str) -> dict | None:
     with _lock:
         conn = _db()
@@ -113,3 +147,95 @@ def get(job_id: str) -> dict | None:
     d["payload"] = json.loads(d["payload"] or "{}")
     d["result"] = json.loads(d["result"] or "null")
     return d
+
+
+def list_recent(limit: int = 20) -> list[dict]:
+    """Return the most recent jobs (newest first)."""
+    with _lock:
+        conn = _db()
+        rows = conn.execute(
+            "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", [limit]
+        ).fetchall()
+        conn.close()
+    result = []
+    for row in rows:
+        d = dict(row)
+        d["payload"] = json.loads(d["payload"] or "{}")
+        d["result"] = json.loads(d["result"] or "null")
+        result.append(d)
+    return result
+
+
+_BACKTEST_KINDS = ("backtest", "backtest_quick")
+
+
+def _row_to_job(row) -> dict:
+    d = dict(row)
+    d["payload"] = json.loads(d["payload"] or "{}")
+    d["result"] = json.loads(d["result"] or "null")
+    return d
+
+
+def find_backtest_job(
+    symbol: str,
+    tf: str,
+    *,
+    active: bool = False,
+) -> dict | None:
+    """
+    Find a backtest job for symbol/tf.
+
+    active=True  → pending or running (most recent)
+    active=False → last finished job (done or failed)
+    """
+    with _lock:
+        conn = _db()
+        if active:
+            row = conn.execute(
+                """
+                SELECT * FROM jobs
+                WHERE kind IN ('backtest', 'backtest_quick')
+                  AND status IN ('pending', 'running')
+                  AND json_extract(payload, '$.symbol') = ?
+                  AND json_extract(payload, '$.tf') = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                [symbol, tf],
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """
+                SELECT * FROM jobs
+                WHERE kind IN ('backtest', 'backtest_quick')
+                  AND status IN ('done', 'failed')
+                  AND json_extract(payload, '$.symbol') = ?
+                  AND json_extract(payload, '$.tf') = ?
+                ORDER BY finished_at DESC
+                LIMIT 1
+                """,
+                [symbol, tf],
+            ).fetchone()
+        conn.close()
+    return _row_to_job(row) if row else None
+
+
+def job_to_summary(job: dict | None) -> dict | None:
+    """Public-facing job summary for API responses."""
+    if job is None:
+        return None
+    kind = job.get("kind", "")
+    mode = "full" if kind == "backtest" else "quick"
+    return {
+        "id": job["id"],
+        "kind": kind,
+        "mode": mode,
+        "status": job["status"],
+        "created_at": job.get("created_at"),
+        "started_at": job.get("started_at"),
+        "finished_at": job.get("finished_at"),
+        "progress_current": job.get("progress_current") or 0,
+        "progress_total": job.get("progress_total") or 0,
+        "progress_message": job.get("progress_message") or "",
+        "result": job.get("result"),
+    }

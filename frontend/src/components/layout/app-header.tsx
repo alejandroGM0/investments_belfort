@@ -4,6 +4,7 @@ import { MainNav } from "@/components/navigation/main-nav";
 import { SymbolSelect } from "@/components/selectors/symbol-select";
 import { TimeframeSelect } from "@/components/selectors/timeframe-select";
 import { RefreshButton } from "@/components/selectors/refresh-button";
+import { HistorySelect } from "@/components/selectors/history-select";
 import { LastUpdatedLabel } from "@/components/selectors/last-updated-label";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
@@ -24,6 +25,7 @@ export function AppHeader() {
           <LastUpdatedLabel />
           <SymbolSelect navigateOnChange />
           <TimeframeSelect />
+          <HistorySelect />
           <RefreshButton />
           <ThemeToggle />
         </div>

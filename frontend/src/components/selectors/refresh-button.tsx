@@ -5,19 +5,40 @@ import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
+import { toApiSymbol, toDisplaySymbol } from "@/lib/symbols";
 import { useState } from "react";
+import { api } from "@/api/client";
 
 export function RefreshButton() {
   const queryClient = useQueryClient();
   const { symbol, timeframe, setLastRefreshed } = useAppStore();
   const [spinning, setSpinning] = useState(false);
+  const apiSymbol = toApiSymbol(symbol);
+  const displaySymbol = toDisplaySymbol(symbol);
 
   async function handleRefresh() {
     setSpinning(true);
-    await queryClient.invalidateQueries({ queryKey: ["ohlcv", symbol, timeframe] });
-    await queryClient.invalidateQueries({ queryKey: ["analysis", symbol, timeframe] });
-    await queryClient.invalidateQueries({ queryKey: ["sentiment", symbol] });
-    await queryClient.invalidateQueries({ queryKey: ["news", symbol] });
+
+    // Trigger backend data refresh first
+    try {
+      await api.POST("/analysis/{symbol}/refresh", {
+        params: { path: { symbol: apiSymbol }, query: { tf: timeframe } },
+      });
+      await api.POST("/backtest/{symbol}/refresh", {
+        params: { path: { symbol: apiSymbol }, query: { tf: timeframe } },
+      });
+    } catch {
+      // Non-critical: still invalidate cache even if backend refresh fails
+    }
+
+    // Then invalidate React Query caches
+    await queryClient.invalidateQueries({ queryKey: ["ohlcv", apiSymbol, timeframe] });
+    await queryClient.invalidateQueries({ queryKey: ["analysis", apiSymbol, timeframe] });
+    await queryClient.invalidateQueries({ queryKey: ["sentiment", displaySymbol] });
+    await queryClient.invalidateQueries({ queryKey: ["news", displaySymbol] });
+    await queryClient.invalidateQueries({ queryKey: ["context", apiSymbol, timeframe] });
+    await queryClient.invalidateQueries({ queryKey: ["ranking"] });
+    await queryClient.invalidateQueries({ queryKey: ["backtest", apiSymbol, timeframe] });
     setLastRefreshed(new Date().toISOString());
     setTimeout(() => setSpinning(false), 600);
   }

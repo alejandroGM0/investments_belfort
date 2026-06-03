@@ -86,6 +86,10 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Timeframe"
+        - name: history
+          in: query
+          schema:
+            $ref: "#/components/schemas/HistoryDepth"
         - name: from
           in: query
           schema:
@@ -98,7 +102,29 @@ paths:
           in: query
           schema:
             type: number
-            default: 0.6
+            minimum: 0
+            maximum: 1
+            default: 0.35
+        - name: pattern_status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ChartPatternStatusFilter"
+        - name: pattern_direction
+          in: query
+          schema:
+            $ref: "#/components/schemas/ChartPatternDirectionFilter"
+        - name: categories
+          in: query
+          description: Comma-separated pattern categories (e.g. candles,trend) or omit for all
+          schema:
+            type: string
+        - name: max_markers
+          in: query
+          schema:
+            type: integer
+            minimum: 5
+            maximum: 200
+            default: 80
       responses:
         "200":
           description: Chart markers
@@ -108,6 +134,60 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ChartMarker"
+
+  /analysis/{symbol}/chart-overlays:
+    get:
+      operationId: getChartOverlays
+      summary: Projection path, EMA, levels and trade setup for chart
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: history
+          in: query
+          schema:
+            $ref: "#/components/schemas/HistoryDepth"
+        - name: projection_bars
+          in: query
+          schema:
+            type: integer
+            minimum: 4
+            maximum: 48
+            default: 16
+        - name: min_level_strength
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1
+            default: 0
+        - name: max_levels_per_side
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 5
+        - name: min_confluence
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 0
+      responses:
+        "200":
+          description: Chart overlay bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChartOverlaysResponse"
 
   /sentiment/{symbol}:
     get:
@@ -189,6 +269,146 @@ paths:
               schema:
                 $ref: "#/components/schemas/BacktestResponse"
 
+  /backtest/{symbol}/refresh:
+    post:
+      operationId: refreshBacktest
+      summary: Trigger a backtest refresh (quick or full grid)
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: ["quick", "full"]
+            default: "quick"
+      responses:
+        "200":
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+
+  /analysis/{symbol}/patterns/all:
+    get:
+      operationId: getPatternsAll
+      summary: Get all patterns with active/recent/inactive status
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: history
+          in: query
+          schema:
+            $ref: "#/components/schemas/HistoryDepth"
+      responses:
+        "200":
+          description: All patterns with status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatternsAllResponse"
+
+  /analysis/{symbol}/refresh:
+    post:
+      operationId: refreshAnalysis
+      summary: Trigger analysis data refresh
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+      responses:
+        "200":
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+
+  /symbols/{symbol}/init:
+    post:
+      operationId: initSymbol
+      summary: Cold-start orchestrator — fetch data + quick backtest
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: history
+          in: query
+          schema:
+            $ref: "#/components/schemas/HistoryDepth"
+      responses:
+        "200":
+          description: Jobs queued for initialization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InitResponse"
+
+  /jobs/{job_id}:
+    get:
+      operationId: getJob
+      summary: Get job status and progress
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+
+  /jobs:
+    get:
+      operationId: listJobs
+      summary: List recent jobs
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of recent jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobResponse"
+
   /ranking:
     get:
       operationId: getRanking
@@ -210,6 +430,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RankingResponse"
+
+  /context/{symbol}:
+    get:
+      operationId: getContext
+      summary: Get market context (correlations; events when configured)
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+      responses:
+        "200":
+          description: Context data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextResponse"
 
   /dashboard/{symbol}:
     get:
@@ -233,11 +475,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardResponse"
 
+
 components:
   schemas:
     Timeframe:
       type: string
       enum: ["1h", "4h", "1D", "1W"]
+
+    HistoryDepth:
+      type: string
+      enum: ["2y", "5y", "max"]
+      default: "5y"
 
     TrendDirection:
       type: string
@@ -437,6 +685,16 @@ components:
             page_size:
               type: integer
 
+    ChartPatternStatusFilter:
+      type: string
+      enum: [highlight, active, recent, active_recent, all]
+      default: active_recent
+
+    ChartPatternDirectionFilter:
+      type: string
+      enum: [all, bull, bear]
+      default: all
+
     ChartMarker:
       type: object
       required: [time, position, shape, color, text]
@@ -455,6 +713,72 @@ components:
           type: string
         pattern_id:
           type: string
+
+    ChartProjectionPoint:
+      type: object
+      required: [time, value]
+      properties:
+        time:
+          type: integer
+        value:
+          type: number
+
+    ChartProjection:
+      type: object
+      required: [direction, target_price, bars, path, candles]
+      properties:
+        direction:
+          $ref: "#/components/schemas/TrendDirection"
+        target_price:
+          type: number
+        bars:
+          type: integer
+        path:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartProjectionPoint"
+        candles:
+          type: array
+          items:
+            $ref: "#/components/schemas/OhlcvCandle"
+
+    EmaSeries:
+      type: object
+      required: [period, points]
+      properties:
+        period:
+          type: integer
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartProjectionPoint"
+
+    ChartOverlaysResponse:
+      type: object
+      required: [symbol, tf, trend, confluence_score, ema, levels]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        trend:
+          $ref: "#/components/schemas/TrendDirection"
+        confluence_score:
+          type: integer
+        projection:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ChartProjection"
+        ema:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmaSeries"
+        levels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Level"
+        trade_setup:
+          $ref: "#/components/schemas/TradeSetup"
 
     SentimentDataPoint:
       type: object
@@ -567,7 +891,7 @@ components:
 
     BacktestResponse:
       type: object
-      required: [symbol, strategy, tf, metrics, updated_at]
+      required: [symbol, strategy, tf, metrics, updated_at, status]
       properties:
         symbol:
           type: string
@@ -575,6 +899,10 @@ components:
           type: string
         tf:
           $ref: "#/components/schemas/Timeframe"
+        status:
+          type: string
+          enum: [empty, running, ready]
+          description: empty = no results yet, running = job in progress, ready = results available
         metrics:
           type: object
           required: [total_trades, win_rate, profit_factor, max_drawdown, sharpe]
@@ -598,6 +926,84 @@ components:
         updated_at:
           type: string
           format: date-time
+          nullable: true
+        note:
+          type: string
+        run_summary:
+          type: object
+          properties:
+            last_run_at:
+              type: string
+              format: date-time
+              nullable: true
+            patterns_with_results:
+              type: integer
+            total_combos_saved:
+              type: integer
+            grid_mode:
+              type: string
+              enum: [quick, full]
+              nullable: true
+            selection_metric:
+              type: string
+        selection:
+          type: object
+          nullable: true
+          properties:
+            pattern_id:
+              type: string
+            pattern_name:
+              type: string
+            pattern_category:
+              type: string
+              nullable: true
+            sort_metric:
+              type: string
+            run_at:
+              type: string
+              format: date-time
+              nullable: true
+            params:
+              type: object
+              additionalProperties: true
+        active_job:
+          $ref: "#/components/schemas/BacktestJobSummary"
+        last_job:
+          $ref: "#/components/schemas/BacktestJobSummary"
+
+    BacktestJobSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        mode:
+          type: string
+          enum: [quick, full]
+        status:
+          type: string
+          enum: [pending, running, done, failed]
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        progress_current:
+          type: integer
+        progress_total:
+          type: integer
+        progress_message:
+          type: string
+        result:
+          nullable: true
 
     RankingItem:
       type: object
@@ -638,6 +1044,51 @@ components:
           type: string
           format: date-time
 
+    ContextEvent:
+      type: object
+      required: [id, title, date, type, impact]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        date:
+          type: string
+        type:
+          type: string
+        impact:
+          type: string
+          enum: ["alto", "medio", "bajo"]
+
+    CorrelationItem:
+      type: object
+      required: [asset, correlation]
+      properties:
+        asset:
+          type: string
+        correlation:
+          type: number
+
+    ContextResponse:
+      type: object
+      required: [symbol, tf, events, correlations, updated_at]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextEvent"
+        correlations:
+          type: array
+          items:
+            $ref: "#/components/schemas/CorrelationItem"
+        updated_at:
+          type: string
+          format: date-time
+
     DashboardResponse:
       type: object
       required: [symbol, tf, combined_score, technical, updated_at]
@@ -663,3 +1114,98 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    PatternAllItem:
+      type: object
+      required: [id, name, category, status, direction]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          $ref: "#/components/schemas/PatternCategory"
+        status:
+          type: string
+          enum: ["active", "recent", "inactive"]
+        direction:
+          type: integer
+        last_occurrence_bars_ago:
+          type: integer
+          nullable: true
+        occurrences_last_100_bars:
+          type: integer
+        description:
+          type: string
+
+    PatternsAllResponse:
+      type: object
+      required: [symbol, tf, total_patterns, active, recent, inactive, patterns]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        total_patterns:
+          type: integer
+        active:
+          type: integer
+        recent:
+          type: integer
+        inactive:
+          type: integer
+        patterns:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatternAllItem"
+
+    InitResponse:
+      type: object
+      required: [symbol, tf, history, data_job_id, backtest_job_id, status]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        history:
+          $ref: "#/components/schemas/HistoryDepth"
+        data_job_id:
+          type: string
+        backtest_job_id:
+          type: string
+        status:
+          type: string
+
+    JobResponse:
+      type: object
+      required: [id, kind, status, created_at]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        payload:
+          type: object
+        status:
+          type: string
+          enum: ["pending", "running", "done", "failed"]
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        result:
+          type: object
+          nullable: true
+        progress_current:
+          type: integer
+        progress_total:
+          type: integer
+        progress_message:
+          type: string

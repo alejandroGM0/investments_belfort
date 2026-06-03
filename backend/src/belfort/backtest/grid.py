@@ -23,11 +23,36 @@ _FILTER_TREND = ["none", "sma200", "adx25"]
 _FILTER_RSI = ["none", "oversold", "overbought"]
 _HOLDING_BARS = [20, 50, None]
 
+# Quick grid parameters (~12 combos vs 243 for full)
+_QUICK_SL_ATR = [1.5]
+_QUICK_TP_RR = [2.0, 3.0]
+_QUICK_FILTER_TREND = ["none", "sma200"]
+_QUICK_FILTER_RSI = ["none"]
+_QUICK_HOLDING_BARS = [20, 50, None]
+
 
 def _all_combos() -> list[dict]:
     combos = []
     for sl, tp, ft, fr, hb in itertools.product(
         _SL_ATR, _TP_RR, _FILTER_TREND, _FILTER_RSI, _HOLDING_BARS
+    ):
+        combos.append(
+            {
+                "sl_atr": sl,
+                "tp_rr": tp,
+                "filter_trend": ft,
+                "filter_rsi": fr,
+                "holding_bars_max": hb,
+            }
+        )
+    return combos
+
+
+def quick_combos() -> list[dict]:
+    """Reduced parameter grid (~12 combos) for fast cold-start backtesting."""
+    combos = []
+    for sl, tp, ft, fr, hb in itertools.product(
+        _QUICK_SL_ATR, _QUICK_TP_RR, _QUICK_FILTER_TREND, _QUICK_FILTER_RSI, _QUICK_HOLDING_BARS
     ):
         combos.append(
             {
@@ -122,5 +147,36 @@ def run_all(
     return results
 
 
+def run_all_quick(
+    symbol: str,
+    tf: str,
+    df: pd.DataFrame,
+    progress_callback: Any = None,
+) -> dict[str, int]:
+    """
+    Run quick grid (~12 combos) for all backtestable patterns.
+    Single-threaded to keep it simple and avoid multiprocessing overhead.
+
+    Returns {pattern_id: runs_saved}.
+    """
+    patterns = reg.all_backtestable()
+    combos = quick_combos()
+    df_dict = df.to_dict("list")
+
+    results: dict[str, int] = {}
+    for i, spec in enumerate(patterns):
+        args = (spec.id, symbol, tf, df_dict, combos)
+        n = _run_pattern_grid(args)
+        results[spec.id] = n
+        if progress_callback:
+            progress_callback(i + 1, len(patterns), spec.id)
+
+    return results
+
+
 def combo_count() -> int:
     return len(_all_combos())
+
+
+def quick_combo_count() -> int:
+    return len(quick_combos())

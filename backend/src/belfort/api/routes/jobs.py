@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from belfort.jobs import queue as q
 
@@ -11,3 +11,9 @@ async def get_job(job_id: str):
     if job is None:
         raise HTTPException(404, f"Job {job_id} not found")
     return job
+
+
+@router.get("/jobs")
+async def list_jobs(limit: int = Query(20, ge=1, le=100)):
+    """List recent jobs (newest first)."""
+    return q.list_recent(limit)

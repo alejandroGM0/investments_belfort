@@ -16,9 +16,15 @@ from sklearn.cluster import DBSCAN  # type: ignore[import]
 from belfort.patterns.registry import PatternSpec, register
 
 
-def detect_levels(df: pd.DataFrame, eps_pct: float = 0.015, min_samples: int = 2) -> dict:
+def detect_levels(
+    df: pd.DataFrame,
+    eps_pct: float = 0.015,
+    min_samples: int = 2,
+    return_strengths: bool = False,
+) -> dict:
     """
     Return {'support': [price, ...], 'resistance': [price, ...]} clusters.
+    If return_strengths is True, lists will contain (price, strength) tuples.
     eps_pct: DBSCAN epsilon as fraction of current price.
     """
     if len(df) < 20:
@@ -34,21 +40,42 @@ def detect_levels(df: pd.DataFrame, eps_pct: float = 0.015, min_samples: int = 2
     resistance_prices = highs[peak_idx]
     support_prices = lows[trough_idx]
 
-    def _cluster(prices: np.ndarray) -> list[float]:
+    def _cluster(prices: np.ndarray) -> list:
         if len(prices) < min_samples:
+            if return_strengths:
+                return [(float(p), 0.3) for p in prices]
             return prices.tolist()
         eps = price * eps_pct
         db = DBSCAN(eps=eps, min_samples=min_samples).fit(prices.reshape(-1, 1))
         labels = db.labels_
         centroids = []
+        counts = []
         for label in set(labels):
             if label == -1:
                 continue
-            centroids.append(float(prices[labels == label].mean()))
+            cluster_prices = prices[labels == label]
+            centroids.append(float(cluster_prices.mean()))
+            counts.append(len(cluster_prices))
+
         # Include noise points as individual levels
         noise = prices[labels == -1]
-        centroids.extend(noise.tolist())
-        return sorted(centroids)
+
+        if return_strengths:
+            results = []
+            # 1 touch (noise) -> strength 0.3
+            # 2 touches -> strength 0.5
+            # 3 touches -> strength 0.7
+            # 4+ touches -> strength 1.0
+            for c_price, count in zip(centroids, counts):
+                strength = 0.5 if count == 2 else (0.7 if count == 3 else 1.0)
+                results.append((c_price, strength))
+            for n_price in noise:
+                results.append((float(n_price), 0.3))
+            results.sort(key=lambda x: x[0])
+            return results
+        else:
+            centroids.extend(noise.tolist())
+            return sorted(centroids)
 
     return {
         "support": _cluster(support_prices),

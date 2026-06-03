@@ -1,4 +1,4 @@
-"""Crypto news via CryptoPanic API."""
+"""Crypto news via NewsAPI.org (primary) or CryptoPanic (legacy)."""
 
 from belfort.news.service import (
     NewsServiceError,

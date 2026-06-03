@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
 import { useRanking } from "@/api/hooks/use-ranking";
+import { toApiSymbol } from "@/lib/symbols";
 import { TrendBadge } from "@/components/common/trend-badge";
 import { ScoreBadge } from "@/components/common/score-badge";
 import { SentimentChip } from "@/components/news/sentiment-chip";
@@ -15,8 +16,8 @@ import { fmtPrice, fmtPct } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 export default function MarketsPage() {
-  const { timeframe } = useAppStore();
-  const { data, isLoading, isError, refetch } = useRanking(timeframe);
+  const { timeframe, watchlist } = useAppStore();
+  const { data, isLoading, isError, refetch } = useRanking(timeframe, watchlist.map(toApiSymbol));
   const [search, setSearch] = useState("");
 
   const filtered = data?.items.filter((item) =>

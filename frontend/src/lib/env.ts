@@ -1,8 +1,5 @@
 export const env = {
   apiBase: process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000",
-  useMocks: process.env.NEXT_PUBLIC_USE_MOCKS === "true",
-  sentimentReal: process.env.NEXT_PUBLIC_SENTIMENT_REAL === "true",
-  newsReal: process.env.NEXT_PUBLIC_NEWS_REAL === "true",
   defaultSymbol: process.env.NEXT_PUBLIC_DEFAULT_SYMBOL ?? "BTC",
   defaultTimeframe: (process.env.NEXT_PUBLIC_DEFAULT_TIMEFRAME ?? "4h") as Timeframe,
 } as const;

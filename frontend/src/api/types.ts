@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/analysis/{symbol}/chart-overlays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Projection path, EMA, levels and trade setup for chart */
+        get: operations["getChartOverlays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sentiment/{symbol}": {
         parameters: {
             query?: never;
@@ -106,6 +123,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/backtest/{symbol}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger a backtest refresh (quick or full grid) */
+        post: operations["refreshBacktest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analysis/{symbol}/patterns/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all patterns with active/recent/inactive status */
+        get: operations["getPatternsAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analysis/{symbol}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger analysis data refresh */
+        post: operations["refreshAnalysis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/symbols/{symbol}/init": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cold-start orchestrator — fetch data + quick backtest */
+        post: operations["initSymbol"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get job status and progress */
+        get: operations["getJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List recent jobs */
+        get: operations["listJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ranking": {
         parameters: {
             query?: never;
@@ -115,6 +234,23 @@ export interface paths {
         };
         /** Get ranking of crypto assets by clarity score */
         get: operations["getRanking"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/context/{symbol}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get market context (correlations; events when configured) */
+        get: operations["getContext"];
         put?: never;
         post?: never;
         delete?: never;
@@ -146,6 +282,11 @@ export interface components {
     schemas: {
         /** @enum {string} */
         Timeframe: "1h" | "4h" | "1D" | "1W";
+        /**
+         * @default 5y
+         * @enum {string}
+         */
+        HistoryDepth: "2y" | "5y" | "max";
         /** @enum {string} */
         TrendDirection: "bullish" | "bearish" | "neutral";
         /** @enum {string} */
@@ -235,6 +376,16 @@ export interface components {
                 page_size?: number;
             };
         };
+        /**
+         * @default active_recent
+         * @enum {string}
+         */
+        ChartPatternStatusFilter: "highlight" | "active" | "recent" | "active_recent" | "all";
+        /**
+         * @default all
+         * @enum {string}
+         */
+        ChartPatternDirectionFilter: "all" | "bull" | "bear";
         ChartMarker: {
             time: number;
             /** @enum {string} */
@@ -244,6 +395,31 @@ export interface components {
             color: string;
             text: string;
             pattern_id?: string;
+        };
+        ChartProjectionPoint: {
+            time: number;
+            value: number;
+        };
+        ChartProjection: {
+            direction: components["schemas"]["TrendDirection"];
+            target_price: number;
+            bars: number;
+            path: components["schemas"]["ChartProjectionPoint"][];
+            candles: components["schemas"]["OhlcvCandle"][];
+        };
+        EmaSeries: {
+            period: number;
+            points: components["schemas"]["ChartProjectionPoint"][];
+        };
+        ChartOverlaysResponse: {
+            symbol: string;
+            tf: components["schemas"]["Timeframe"];
+            trend: components["schemas"]["TrendDirection"];
+            confluence_score: number;
+            projection?: components["schemas"]["ChartProjection"] | null;
+            ema: components["schemas"]["EmaSeries"][];
+            levels: components["schemas"]["Level"][];
+            trade_setup?: components["schemas"]["TradeSetup"];
         };
         SentimentDataPoint: {
             /** Format: date-time */
@@ -295,10 +471,30 @@ export interface components {
             date: string;
             value: number;
         };
+        BacktestJobSummary: {
+            id?: string;
+            kind?: string;
+            /** @enum {string} */
+            mode?: "quick" | "full";
+            /** @enum {string} */
+            status?: "pending" | "running" | "done" | "failed";
+            /** Format: date-time */
+            created_at?: string | null;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            finished_at?: string | null;
+            progress_current?: number;
+            progress_total?: number;
+            progress_message?: string;
+            result?: unknown;
+        };
         BacktestResponse: {
             symbol: string;
             strategy: string;
             tf: components["schemas"]["Timeframe"];
+            /** @enum {string} */
+            status: "empty" | "running" | "ready";
             metrics: {
                 total_trades: number;
                 win_rate: number;
@@ -309,7 +505,28 @@ export interface components {
             };
             equity_curve?: components["schemas"]["EquityPoint"][];
             /** Format: date-time */
-            updated_at: string;
+            updated_at: string | null;
+            note?: string;
+            run_summary?: {
+                /** Format: date-time */
+                last_run_at?: string | null;
+                patterns_with_results?: number;
+                total_combos_saved?: number;
+                /** @enum {string} */
+                grid_mode?: "quick" | "full" | null;
+                selection_metric?: string;
+            };
+            selection?: {
+                pattern_id: string;
+                pattern_name: string;
+                pattern_category?: string | null;
+                sort_metric?: string;
+                /** Format: date-time */
+                run_at?: string | null;
+                params?: Record<string, unknown>;
+            } | null;
+            active_job?: components["schemas"]["BacktestJobSummary"] | null;
+            last_job?: components["schemas"]["BacktestJobSummary"] | null;
         };
         RankingItem: {
             rank: number;
@@ -329,6 +546,26 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        ContextEvent: {
+            id: string;
+            title: string;
+            date: string;
+            type: string;
+            /** @enum {string} */
+            impact: "alto" | "medio" | "bajo";
+        };
+        CorrelationItem: {
+            asset: string;
+            correlation: number;
+        };
+        ContextResponse: {
+            symbol: string;
+            tf: components["schemas"]["Timeframe"];
+            events: components["schemas"]["ContextEvent"][];
+            correlations: components["schemas"]["CorrelationItem"][];
+            /** Format: date-time */
+            updated_at: string;
+        };
         DashboardResponse: {
             symbol: string;
             tf: components["schemas"]["Timeframe"];
@@ -340,6 +577,51 @@ export interface components {
             disclaimer?: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        PatternAllItem: {
+            id: string;
+            name: string;
+            category: components["schemas"]["PatternCategory"];
+            /** @enum {string} */
+            status: "active" | "recent" | "inactive";
+            direction: number;
+            last_occurrence_bars_ago?: number | null;
+            occurrences_last_100_bars?: number;
+            description?: string;
+        };
+        PatternsAllResponse: {
+            symbol: string;
+            tf: components["schemas"]["Timeframe"];
+            total_patterns: number;
+            active: number;
+            recent: number;
+            inactive: number;
+            patterns: components["schemas"]["PatternAllItem"][];
+        };
+        InitResponse: {
+            symbol: string;
+            tf: components["schemas"]["Timeframe"];
+            history: components["schemas"]["HistoryDepth"];
+            data_job_id: string;
+            backtest_job_id: string;
+            status: string;
+        };
+        JobResponse: {
+            id: string;
+            kind: string;
+            payload?: Record<string, never>;
+            /** @enum {string} */
+            status: "pending" | "running" | "done" | "failed";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            finished_at?: string | null;
+            result?: Record<string, never> | null;
+            progress_current?: number;
+            progress_total?: number;
+            progress_message?: string;
         };
     };
     responses: never;
@@ -406,9 +688,15 @@ export interface operations {
         parameters: {
             query?: {
                 tf?: components["schemas"]["Timeframe"];
+                history?: components["schemas"]["HistoryDepth"];
                 from?: number;
                 to?: number;
                 min_confidence?: number;
+                pattern_status?: components["schemas"]["ChartPatternStatusFilter"];
+                pattern_direction?: components["schemas"]["ChartPatternDirectionFilter"];
+                /** @description Comma-separated pattern categories (e.g. candles,trend) or omit for all */
+                categories?: string;
+                max_markers?: number;
             };
             header?: never;
             path: {
@@ -425,6 +713,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChartMarker"][];
+                };
+            };
+        };
+    };
+    getChartOverlays: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+                history?: components["schemas"]["HistoryDepth"];
+                projection_bars?: number;
+                min_level_strength?: number;
+                max_levels_per_side?: number;
+                min_confluence?: number;
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chart overlay bundle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChartOverlaysResponse"];
                 };
             };
         };
@@ -503,6 +820,149 @@ export interface operations {
             };
         };
     };
+    refreshBacktest: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+                mode?: "quick" | "full";
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job queued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+        };
+    };
+    getPatternsAll: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+                history?: components["schemas"]["HistoryDepth"];
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All patterns with status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatternsAllResponse"];
+                };
+            };
+        };
+    };
+    refreshAnalysis: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job queued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+        };
+    };
+    initSymbol: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+                history?: components["schemas"]["HistoryDepth"];
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jobs queued for initialization */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InitResponse"];
+                };
+            };
+        };
+    };
+    getJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+        };
+    };
+    listJobs: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of recent jobs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"][];
+                };
+            };
+        };
+    };
     getRanking: {
         parameters: {
             query?: {
@@ -522,6 +982,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RankingResponse"];
+                };
+            };
+        };
+    };
+    getContext: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Context data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContextResponse"];
                 };
             };
         };

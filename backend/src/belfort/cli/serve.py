@@ -1,15 +1,16 @@
-"""belfort serve — start the FastAPI server."""
+"""belfort serve — start the FastAPI server (registered as a direct command in __main__)."""
+
+from __future__ import annotations
+
+from typing import Annotated
 
 import typer
 
-app = typer.Typer(help="API server commands.", invoke_without_command=True)
 
-
-@app.callback(invoke_without_command=True)
 def serve(
-    host: str = typer.Option("0.0.0.0", "--host"),
-    port: int = typer.Option(8001, "--port"),
-    reload: bool = typer.Option(False, "--reload"),
+    host: Annotated[str, typer.Option("--host", help="Bind host")] = "0.0.0.0",
+    port: Annotated[int, typer.Option("--port", help="Bind port")] = 8000,
+    reload: Annotated[bool, typer.Option("--reload/--no-reload", help="Auto-reload on code changes")] = False,
 ):
     """Start the Belfort FastAPI server."""
     import uvicorn
@@ -20,3 +21,8 @@ def serve(
         port=port,
         reload=reload,
     )
+
+
+# Expose as a Typer app for backward compat
+app = typer.Typer(help="API server commands.", no_args_is_help=True)
+app.command()(serve)

@@ -29,11 +29,14 @@ class DetectedPattern:
     pattern_id: str
     name: str
     category: str
-    direction: int       # +1 / -1
-    bar_time: int        # unix seconds
+    direction: int       # +1 bullish / -1 bearish / 0 inactive
+    bar_time: int        # unix seconds (0 when never triggered)
     confidence: float
     highlight: bool
     description: str
+    status: str = "inactive"           # "active" | "recent" | "inactive"
+    bars_since: int | None = None      # how many bars ago it last fired
+    occurrences_100: int = 0           # times fired in last 100 bars
 
 
 @dataclass
@@ -228,7 +231,7 @@ def run(
         backtest_win_rates=win_rates,
     )
 
-    # --- Build pattern list ---
+    # --- Build full pattern list (all ~80, not just last-bar active) ---
     sig_map = {s.pattern_id: s for s in result.signals}
     highlight_ids = {s.pattern_id for s in result.highlights}
 
@@ -237,29 +240,59 @@ def run(
             series = spec.detect(df_enriched)
         except Exception:
             continue
+
         last_val = int(series.iloc[-1])
+
+        # Count occurrences in last 100 bars
+        recent_window = series.tail(100)
+        occurrences_100 = int((recent_window != 0).sum())
+
+        # Find most recent activation and how long ago it was
+        active_bars = series[series != 0]
+        if not active_bars.empty:
+            last_active_idx = int(active_bars.index[-1])
+            bars_since = len(df_enriched) - 1 - last_active_idx
+            last_bar_time_pat = int(df_enriched["time"].iloc[last_active_idx])
+        else:
+            bars_since = None
+            last_bar_time_pat = 0
+
+        # Status: active (fires now) → recent (≤5 bars ago) → inactive
         if last_val != 0:
-            sig = sig_map.get(spec.id)
-            conf = sig.confidence if sig else 0.0
-            all_detected.append(DetectedPattern(
-                pattern_id=spec.id,
-                name=spec.name,
-                category=spec.category,
-                direction=last_val,
-                bar_time=last_bar_time,
-                confidence=conf,
-                highlight=spec.id in highlight_ids,
-                description=spec.description,
-            ))
+            status = "active"
+        elif bars_since is not None and bars_since <= 5:
+            status = "recent"
+        else:
+            status = "inactive"
+
+        sig = sig_map.get(spec.id)
+        conf = sig.confidence if sig else 0.0
+
+        all_detected.append(DetectedPattern(
+            pattern_id=spec.id,
+            name=spec.name,
+            category=spec.category,
+            direction=last_val if last_val != 0 else (
+                int(active_bars.iloc[-1]) if not active_bars.empty else 0
+            ),
+            bar_time=last_bar_time_pat,
+            confidence=conf,
+            highlight=spec.id in highlight_ids,
+            description=spec.description,
+            status=status,
+            bars_since=bars_since,
+            occurrences_100=occurrences_100,
+        ))
 
     highlights = [p for p in all_detected if p.highlight]
 
     # --- Levels ---
+    raw_levels_with_strengths = detect_levels(df, return_strengths=True)
     level_objs: list[Level] = []
-    for price in raw_levels["support"]:
-        level_objs.append(Level(price=round(price, 6), level_type="support", strength=0.7))
-    for price in raw_levels["resistance"]:
-        level_objs.append(Level(price=round(price, 6), level_type="resistance", strength=0.7))
+    for price, strength in raw_levels_with_strengths["support"]:
+        level_objs.append(Level(price=round(price, 6), level_type="support", strength=strength))
+    for price, strength in raw_levels_with_strengths["resistance"]:
+        level_objs.append(Level(price=round(price, 6), level_type="resistance", strength=strength))
 
     # --- Indicators ---
     indicator_snaps = _indicator_snapshots(df_enriched)

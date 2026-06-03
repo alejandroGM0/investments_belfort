@@ -16,7 +16,10 @@ def pattern_to_dict(p: DetectedPattern, tf: str) -> dict:
         "direction": direction,
         "bar_time": p.bar_time,
         "confidence": round(p.confidence, 3),
-        "active": True,
+        "active": p.status == "active",
+        "status": p.status,
+        "bars_since": p.bars_since,
+        "occurrences_100": p.occurrences_100,
         "description": p.description,
         "tf": tf,
         "highlight": p.highlight,
@@ -31,6 +34,9 @@ def level_to_dict(lv: Level) -> dict:
     }
 
 
+_STATUS_ORDER = {"active": 0, "recent": 1, "inactive": 2}
+
+
 def report_to_analysis_response(report: AnalysisReport, page: int, page_size: int, category: str | None) -> dict:
     # Flatten and optionally filter patterns
     all_patterns = report.patterns
@@ -41,7 +47,7 @@ def report_to_analysis_response(report: AnalysisReport, page: int, page_size: in
     start = (page - 1) * page_size
     paged = all_patterns[start: start + page_size]
 
-    # Group patterns by category for the groups[] field
+    # Group ALL patterns by category, sorted: active → recent → inactive
     cat_order = ["candles", "chart_patterns", "structure", "indicators", "levels"]
     groups_dict: dict[str, list] = {c: [] for c in cat_order}
     for p in report.patterns:
@@ -52,7 +58,12 @@ def report_to_analysis_response(report: AnalysisReport, page: int, page_size: in
         {
             "category": cat,
             "count": len(items),
-            "items": [pattern_to_dict(p, report.tf) for p in items[:10]],  # max 10 preview
+            "active_count": sum(1 for p in items if p.status == "active"),
+            "recent_count": sum(1 for p in items if p.status == "recent"),
+            "items": [
+                pattern_to_dict(p, report.tf)
+                for p in sorted(items, key=lambda p: (_STATUS_ORDER.get(p.status, 2), -p.confidence))
+            ],
         }
         for cat, items in groups_dict.items()
         if items
