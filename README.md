@@ -1,16 +1,16 @@
 # Investments Belfort
 
-Plataforma de análisis de inversiones en cripto: motor de patrones técnicos, backtest y UI.
+Crypto investment analysis platform: technical pattern engine, backtesting, and web UI.
 
-## Estructura
+## Structure
 
-| Directorio | Descripción |
-|------------|-------------|
-| [`backend/`](backend/) | Motor Belfort (FastAPI, CLI, TA-Lib, VectorBT) |
-| [`frontend/`](frontend/) | App Next.js (ranking, análisis por activo, mocks MSW) |
-| [`contracts/`](contracts/) | Contrato OpenAPI compartido |
+| Directory | Description |
+|-----------|-------------|
+| [`backend/`](backend/) | Belfort engine (FastAPI, CLI, TA-Lib, VectorBT) |
+| [`frontend/`](frontend/) | Next.js app (ranking, per-asset analysis, MSW mocks) |
+| [`contracts/`](contracts/) | Shared OpenAPI contract |
 
-## Inicio rápido
+## Quick start
 
 ```bash
 # Backend
@@ -20,8 +20,8 @@ cd backend && pip install -e ".[talib,test]" && belfort doctor
 cd frontend && pnpm install && pnpm dev
 ```
 
-Ver [`backend/README.md`](backend/README.md) para instalación de TA-Lib y uso del CLI.
+See [`backend/README.md`](backend/README.md) for TA-Lib installation and CLI usage.
 
-## Licencia
+## License
 
-Experimento personal — sin licencia explícita por ahora.
+Personal experiment — no explicit license yet.
