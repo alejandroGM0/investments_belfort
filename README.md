@@ -215,9 +215,9 @@ The monorepo is organized as follows:
 
 ## 🐺 The Wolf's Disclaimer
 
-> *"Sell me this strategy."* 🖋️
+> *"The only thing standing between you and your goal is the bullshit story you keep telling yourself as to why you can't achieve it."* — Jordan Belfort
 
-While Investments Belfort provides institutional-grade analytics, this platform is a **personal experiment** and does not constitute financial advice. Trade responsibly, and remember: the only thing standing between you and your goal is the poorly optimized backtest you keep telling yourself works.
+While Investments Belfort provides institutional-grade analytics, this platform is a **personal experiment** and does not constitute financial advice. Trade responsibly.
 
 ---
 
