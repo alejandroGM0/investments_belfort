@@ -17,6 +17,16 @@
 
 ---
 
+## ✨ Key Features
+
+* **Advanced Technical Analysis Engine**: Automatically detects complex candlestick patterns, structural support/resistance levels, and multi-timeframe confluences.
+* **Massive Concurrent Backtesting**: Leverages `VectorBT` and `DuckDB` to run millions of simulated trades across grid optimizations in seconds.
+* **Real-Time Sentiment Analysis**: Aggregates market sentiment using live data from Reddit, News RSS feeds, and leading crypto publications.
+* **Sleek & Professional Web UI**: A beautiful, responsive Next.js frontend with dark mode, glassmorphism design, and interactive high-performance charting.
+* **High-Performance API**: A fully typed FastAPI backend engineered for low-latency calculations and optimized data pipelining.
+
+---
+
 ## 📸 Screenshots (Web Interface)
 
 Explore the Belfort user interface in action:
