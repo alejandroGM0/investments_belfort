@@ -4,16 +4,31 @@
 
 <h1 align="center">📈 Investments Belfort</h1>
 
+<p align="center">
+  <em>"We're not just disrupting finance, we're vaporizing it. Welcome to the new paradigm."</em><br>
+  <strong>— Alejandro, CEO & Visionary Founder of Belfort Industries (probably)</strong>
+</p>
+
 <div align="center">
-  <img src="https://img.shields.io/badge/Python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Next.js-15-black.svg?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js">
-  <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
-  <img src="https://img.shields.io/badge/DuckDB-FFB000?style=for-the-badge&logo=duckdb&logoColor=white" alt="DuckDB">
+  <img src="https://img.shields.io/badge/Project_Status-HYPER_ACTIVE_🚀-success?style=for-the-badge" alt="Active">
+  <img src="https://img.shields.io/badge/Vibe-IMMACULATE_🔥-orange?style=for-the-badge" alt="Vibe">
+  <img src="https://img.shields.io/badge/Funding-BOOTSTRAPPED_💰-blue?style=for-the-badge" alt="Funding">
 </div>
 <br>
 
-**Investments Belfort** is a comprehensive, institutional-grade cryptocurrency investment analysis platform. It features an advanced technical analysis engine for pattern recognition (candlesticks, chart patterns, support/resistance, confluences), a powerful massive backtesting engine driven by **VectorBT** and **DuckDB**, and a modern, responsive, and aesthetically stunning web interface built with **Next.js**.
+**Investments Belfort** is our next-gen, Web3-adjacent, synergy-driven cryptocurrency investment analysis platform. We are literally changing the world by drawing lines on charts faster than you can say "Series A funding." It features an advanced technical analysis engine that finds patterns where none exist, a powerful massive backtesting engine driven by **VectorBT** and **DuckDB** to prove you wrong in milliseconds, and a frontend so stunning it’ll make venture capitalists weep.
+
+---
+
+## 🚀 The Tech Stack (Because regular tech wasn't "disruptive" enough)
+
+We only use the most cutting-edge, buzzword-compliant technologies to ensure maximum synergy:
+
+* **Python 3.10+**: Because writing C++ is for people who sleep. We like our backend thicc and our dev cycles fast.
+* **Next.js 15**: So fast your browser will need a seatbelt. We're rendering pages in the future.
+* **FastAPI**: It has "Fast" in the name, so you know it's good. 
+* **Tailwind CSS**: For when you want to write CSS but you also want it to look *chef's kiss* out of the box. 
+* **DuckDB**: Because traditional databases are for boomers. We process data so fast we go back in time.
 
 ---
 
@@ -200,11 +215,9 @@ The monorepo is organized as follows:
 
 ## 🐺 The Wolf's Disclaimer
 
-> *"You know what a Fugazi is? Fugayzi, fugazi. It's a whazy. It's a woozie. It's fairy dust."*
+> *"Sell me this strategy."* 🖋️
 
-While Investments Belfort provides institutional-grade analytics to prevent you from investing in *fairy dust* and *fugazis*, this platform is a **personal experiment** and does not constitute financial advice.
-
-**"I'm not leaving! I'm not leaving!"** — *The DuckDB backend when running 10,000 parallel grid optimization backtests.* 🥁🦍
+While Investments Belfort provides institutional-grade analytics, this platform is a **personal experiment** and does not constitute financial advice. Trade responsibly, and remember: the only thing standing between you and your goal is the poorly optimized backtest you keep telling yourself works.
 
 ---
 
