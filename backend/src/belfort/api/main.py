@@ -44,10 +44,23 @@ async def lifespan(app: FastAPI):
                     q.enqueue("backtest_quick", {"symbol": sym, "tf": "4h"})
                 print("[scheduler] enqueued quick backtests for all symbols")
 
+            async def _refresh_ohlcv_live():
+                """Keep parquet cache warm with latest candles."""
+                from belfort.data.loader import load
+
+                for sym in config.DEFAULT_SYMBOLS:
+                    for tf in ("1h", "4h"):
+                        try:
+                            load(sym, tf, refresh=True)
+                        except Exception:
+                            pass
+                print("[scheduler] refreshed OHLCV for default symbols")
+
             scheduler.add_job(_refresh_all_symbols, "interval", minutes=15, id="refresh_all")
             scheduler.add_job(_rerun_quick_backtests, "interval", hours=6, id="rerun_backtests")
+            scheduler.add_job(_refresh_ohlcv_live, "interval", minutes=3, id="ohlcv_live")
             scheduler.start()
-            print("[scheduler] started — refresh every 15m, backtest every 6h")
+            print("[scheduler] started — OHLCV live 3m, analysis 15m, backtest 6h")
         except ImportError:
             print("[scheduler] apscheduler not installed, periodic jobs disabled")
 
@@ -94,6 +107,7 @@ for _mod, _tag in (
     ("context", "context"),
     ("jobs", "jobs"),
     ("symbols", "symbols"),
+    ("ticker", "ticker"),
 ):
     try:
         import importlib

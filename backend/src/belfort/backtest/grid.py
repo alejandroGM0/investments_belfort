@@ -12,6 +12,7 @@ from typing import Any
 import pandas as pd
 
 from belfort import config
+from belfort.backtest.dataframe import prepare_backtest_df
 from belfort.backtest.engine import run_single
 from belfort.patterns import registry as reg
 from belfort.storage import db
@@ -69,13 +70,15 @@ def quick_combos() -> list[dict]:
 def _run_pattern_grid(args: tuple) -> int:
     """Worker function (multiprocessing-safe)."""
     pattern_id, symbol, tf, df_dict, combos = args
-    df = pd.DataFrame(df_dict)
+    df = prepare_backtest_df(pd.DataFrame(df_dict))
     spec = reg.get(pattern_id)
     if spec is None:
         return 0
 
     try:
         signal = spec.detect(df)
+        if len(signal) == len(df):
+            signal = pd.Series(signal.values, index=df.index)
     except Exception:
         return 0
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from datetime import datetime, timezone
 
@@ -7,6 +8,7 @@ from fastapi import APIRouter, Query
 
 from belfort.analysis import run as run_analysis
 from belfort.data.loader import load
+from belfort.data.ticker import fetch_ticker
 from belfort.sentiment.service import NoDataSourcesError, get_sentiment
 from belfort.symbols import display_symbol, normalize_symbol
 from belfort.storage.db import top_runs
@@ -25,11 +27,7 @@ def _ranking_symbols(symbols_param: str | None) -> list[str]:
     return [normalize_symbol(s) for s in raw.split(",") if s.strip()]
 
 
-@router.get("/ranking")
-async def get_ranking(
-    tf: str = Query("4h"),
-    symbols: str | None = Query(None),
-):
+def _build_ranking(tf: str, symbols: str | None) -> dict:
     items: list[dict] = []
     for sym in _ranking_symbols(symbols):
         try:
@@ -53,14 +51,20 @@ async def get_ranking(
 
         price: float | None = None
         price_change_24h: float | None = None
-        df = load(sym, tf)
-        if df is not None and not df.empty:
-            last = float(df.iloc[-1]["close"])
-            price = last
-            if len(df) >= 7:
-                prev = float(df.iloc[-7]["close"])
-                if prev:
-                    price_change_24h = round((last - prev) / prev * 100, 2)
+        try:
+            tick = fetch_ticker(sym)
+            price = float(tick["price"])
+            if tick.get("change_24h_pct") is not None:
+                price_change_24h = round(float(tick["change_24h_pct"]), 2)
+        except Exception:
+            df = load(sym, tf, refresh=True)
+            if df is not None and not df.empty:
+                last = float(df.iloc[-1]["close"])
+                price = last
+                if len(df) >= 7:
+                    prev = float(df.iloc[-7]["close"])
+                    if prev:
+                        price_change_24h = round((last - prev) / prev * 100, 2)
 
         win_rate: float | None = None
         try:
@@ -93,3 +97,12 @@ async def get_ranking(
         "items": items,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.get("/ranking")
+async def get_ranking(
+    tf: str = Query("4h"),
+    symbols: str | None = Query(None),
+):
+    return await asyncio.to_thread(_build_ranking, tf, symbols)
+

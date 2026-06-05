@@ -1,35 +1,90 @@
-# 📈 Investments Belfort
+<p align="center">
+  <img src="docs/images/banner.png" alt="Investments Belfort Banner" width="100%">
+</p>
 
-Plataforma integral de análisis de inversiones en criptomonedas. Cuenta con un motor de análisis técnico de patrones (candelas, figuras gráficas, soporte/resistencia, confluencias, etc.), un motor de backtesting masivo con VectorBT y DuckDB, y una interfaz web moderna en Next.js.
+<h1 align="center">📈 Investments Belfort</h1>
+
+<div align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/Next.js-15-black.svg?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js">
+  <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
+  <img src="https://img.shields.io/badge/DuckDB-FFB000?style=for-the-badge&logo=duckdb&logoColor=white" alt="DuckDB">
+</div>
+<br>
+
+**Investments Belfort** is a comprehensive, institutional-grade cryptocurrency investment analysis platform. It features an advanced technical analysis engine for pattern recognition (candlesticks, chart patterns, support/resistance, confluences), a powerful massive backtesting engine driven by **VectorBT** and **DuckDB**, and a modern, responsive, and aesthetically stunning web interface built with **Next.js**.
 
 ---
 
-## 📸 Capturas de Pantalla (Interface Web)
+## 📸 Screenshots (Web Interface)
 
-Aquí puedes ver la interfaz de usuario de Belfort en acción:
+Explore the Belfort user interface in action:
 
-### 📊 Dashboard Principal (Mercados y Rankings)
+### 📊 Main Dashboard (Markets & Rankings)
+Get a high-level overview of the market with real-time rankings and a beautifully designed heatmap.
 ![Dashboard](docs/images/dashboard.png)
 
-### 📈 Análisis Técnico Detallado (Patrones, Estructura y Confluencias)
-![Análisis Técnico](docs/images/technical.png)
+### 📈 Detailed Technical Analysis (Patterns, Structure & Confluences)
+Dive deep into the charts with advanced candlestick pattern recognition, support/resistance plotting, and multiple technical indicators.
+![Technical Analysis](docs/images/technical.png)
 
-### 🧪 Backtesting de Estrategias y Optimización de Grid
+### 🧪 Strategy Backtesting & Grid Optimization
+Run massive, highly concurrent backtests and optimize your trading strategies using our robust grid optimization interface.
 ![Backtest](docs/images/strategy.png)
 
-### 💬 Análisis de Sentimiento (Noticias, Reddit y RSS)
-![Sentimiento](docs/images/sentiment.png)
+### 💬 Sentiment Analysis (News, Reddit & RSS)
+Gauge the pulse of the market with our aggregated sentiment analysis, bringing together the latest news, Reddit discussions, and overall sentiment scores.
+![Sentiment](docs/images/sentiment.png)
 
 ---
 
-## 🛠️ Requisitos Previos
+## 🏗️ System Architecture
 
-Antes de comenzar, asegúrate de tener instalado en tu sistema:
-* **Python 3.10 o superior** (se recomienda usar `uv` o `venv`)
-* **Node.js 18 o superior** y **pnpm** (para el frontend)
-* **TA-Lib** (librería de C requerida por el motor de backend)
+The Belfort ecosystem is structured into a high-performance Backend focused on data processing, and a modern Frontend for visualization, both communicating through an OpenAPI contract.
 
-### Instalación de TA-Lib en Ubuntu/Debian:
+```mermaid
+graph TD
+    subgraph Frontend [Frontend - Next.js]
+        A[Dashboard & Market]
+        B[Technical Analysis]
+        C[Strategy Backtest]
+    end
+
+    subgraph Backend [Backend - Python / FastAPI]
+        E[API Gateway - FastAPI]
+        F[Analysis Engine - TA-Lib]
+        G[Backtest Engine - VectorBT]
+        H[Data Layer - DuckDB]
+    end
+
+    subgraph External [External Sources]
+        I[Binance / Exchanges API]
+        J[News / Sentiment Feeds]
+    end
+
+    A -->|REST API| E
+    B -->|REST API| E
+    C -->|REST API| E
+
+    E <--> F
+    E <--> G
+    E <--> H
+
+    H <--> I
+    H <--> J
+```
+
+---
+
+## 🛠️ Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+* **Python 3.10 or higher** (using `uv` or `venv` is recommended)
+* **Node.js 18 or higher** and **pnpm** (for the frontend)
+* **TA-Lib** (C library required by the backend engine)
+
+### TA-Lib Installation on Ubuntu/Debian:
 ```bash
 sudo apt-get update
 sudo apt-get install build-essential libta-lib-dev || (
@@ -41,97 +96,98 @@ sudo apt-get install build-essential libta-lib-dev || (
 
 ---
 
-## 🚀 Inicio Rápido (Quick Start)
+## 🚀 Quick Start
 
-Sigue estos pasos para poner en marcha la aplicación localmente:
+Follow these steps to get the application running locally:
 
-### 1. Configurar e Instalar el Backend
+### 1. Configure and Install the Backend
 
 ```bash
 cd backend
 
-# Copiar archivo de entorno de ejemplo y ajustarlo si es necesario
+# Copy the example environment file and adjust if necessary
 cp .env.example .env
 
-# Instalar dependencias del backend (incluyendo TA-Lib y dependencias de test)
+# Install backend dependencies (including TA-Lib and testing dependencies)
 uv pip install -e ".[talib,test]"
-# O bien si usas pip convencional:
+# Or if using standard pip:
 pip install -e ".[talib,test]"
 
-# Verificar que la instalación del backend sea correcta
+# Verify that the backend installation was successful
 belfort doctor
 ```
 
-### 2. Descargar Datos e Iniciar el Servidor API
+### 2. Fetch Data and Start the API Server
 
-Antes de utilizar el cliente web, debes descargar datos históricos y encender la API de FastAPI:
+Before using the web client, you must download historical data and start the FastAPI server:
 
 ```bash
-# Descargar datos históricos de velas (OHLCV) de Binance para BTC y ETH (ej. 2 años con velas de 4h)
+# Download historical candlestick data (OHLCV) from Binance for BTC and ETH (e.g., 2 years with 4h timeframe)
 belfort data fetch BTCUSDT --tf 4h --since 2y
 belfort data fetch ETHUSDT --tf 4h --since 2y
 
-# (Opcional) Ejecutar el pipeline de análisis de patrones y el backtesting inicial
+# (Optional) Run the pattern analysis pipeline and initial backtesting
 belfort analyze BTCUSDT --tf 4h
 belfort backtest all BTCUSDT --tf 4h --workers 4
 
-# Iniciar el servidor API de FastAPI en el puerto 8000
+# Start the FastAPI server on port 8000
 source activate.sh
 belfort serve --port 8000
 ```
 
-### 3. Configurar e Iniciar el Frontend (UI)
+### 3. Configure and Start the Frontend (UI)
 
-En una **nueva terminal**, navega a la carpeta del frontend y levanta la aplicación:
+In a **new terminal**, navigate to the frontend folder and start the application:
 
 ```bash
 cd frontend
 
-# Configurar variables de entorno locales
+# Set up local environment variables
 cp .env.local.example .env.local
 
-# Instalar las dependencias e iniciar el servidor de desarrollo en Next.js
+# Install dependencies and start the Next.js development server
 pnpm install
 pnpm dev
 ```
 
-Una vez iniciado, abre tu navegador en [http://localhost:3000](http://localhost:3000).
+Once started, open your browser at [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 💻 Uso de la CLI (Línea de Comandos)
+## 💻 CLI Usage (Command Line Interface)
 
-El comando `belfort` ofrece múltiples herramientas útiles desde la terminal:
+The `belfort` command provides multiple useful tools from the terminal for management and automated analysis:
 
-* **Diagnóstico de dependencias:** `belfort doctor`
-* **Descarga de velas:** `belfort data fetch <Symbol> --tf <Timeframe> --since <Period>`
-* **Análisis de patrones:** `belfort analyze BTCUSDT --tf 4h`
-* **Listado de patrones:** `belfort patterns list`
-* **Ejecutar un Backtest simple:**
+* **Dependency Diagnostics:** `belfort doctor`
+* **Fetch Candlestick Data:** `belfort data fetch <Symbol> --tf <Timeframe> --since <Period>`
+* **Pattern Analysis:** `belfort analyze BTCUSDT --tf 4h`
+* **List Supported Patterns:** `belfort patterns list`
+* **Run a Simple Backtest:**
   ```bash
   belfort backtest run BTCUSDT --tf 4h --pattern cdl_engulfing --sl-atr 1.5 --tp-rr 2
   ```
-* **Optimización en lote (Grid Backtest de todos los patrones y parámetros):**
+* **Batch Optimization (Grid Backtest of all patterns and parameters):**
   ```bash
   belfort backtest all BTCUSDT --tf 4h --workers 4
   ```
-* **Reporte de los mejores resultados:**
+* **Top Results Report:**
   ```bash
   belfort backtest report BTCUSDT --tf 4h --top 20 --sort sharpe
   ```
 
 ---
 
-## 📂 Estructura del Proyecto
+## 📂 Project Structure
 
-El monorepo está organizado de la siguiente manera:
+The monorepo is organized as follows:
 
-* [`backend/`](backend/) — Motor principal Belfort escrito en Python (FastAPI, CLI, TA-Lib, VectorBT, DuckDB).
-* [`frontend/`](frontend/) — Aplicación de usuario moderna escrita en Next.js (React 19, TypeScript, Tailwind, Lightweight Charts).
-* [`contracts/`](contracts/) — Definición de OpenAPI compartida entre el backend y frontend.
+* [`backend/`](backend/) — Core Belfort engine written in Python (FastAPI, CLI, TA-Lib, VectorBT, DuckDB).
+* [`frontend/`](frontend/) — Modern user application written in Next.js (React 19, TypeScript, Tailwind, Lightweight Charts).
+* [`contracts/`](contracts/) — OpenAPI definitions shared between backend and frontend.
+* [`docs/`](docs/) — Documentation and graphical resources.
 
 ---
 
-## 🛡️ Licencia
+## 🛡️ License
 
-Experimento personal sin licencia comercial explícita. Todos los derechos reservados.
+Personal experiment without explicit commercial license. All rights reserved.

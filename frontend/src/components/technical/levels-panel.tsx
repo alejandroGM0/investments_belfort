@@ -1,6 +1,10 @@
-import { cn } from "@/lib/utils";
-import { fmtPrice } from "@/lib/utils";
+"use client";
+
+import { useState, useMemo } from "react";
+import { cn, fmtPrice } from "@/lib/utils";
 import type { components } from "@/api/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Filter } from "lucide-react";
 
 type Level = components["schemas"]["Level"];
 
@@ -39,11 +43,44 @@ function LevelRow({ lvl, isSupport }: { lvl: Level; isSupport: boolean }) {
 }
 
 export function LevelsPanel({ levels }: LevelsPanelProps) {
-  const supports = levels.filter((l) => l.type === "support").sort((a, b) => b.strength - a.strength);
-  const resistances = levels.filter((l) => l.type === "resistance").sort((a, b) => b.strength - a.strength);
+  const [minStrength, setMinStrength] = useState<number>(0);
+
+  const supports = useMemo(() => 
+    levels.filter((l) => l.type === "support" && l.strength >= minStrength).sort((a, b) => b.strength - a.strength),
+    [levels, minStrength]
+  );
+  
+  const resistances = useMemo(() => 
+    levels.filter((l) => l.type === "resistance" && l.strength >= minStrength).sort((a, b) => b.strength - a.strength),
+    [levels, minStrength]
+  );
 
   return (
     <div className="space-y-4">
+      {/* FILTER BAR */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-muted/20 p-4 rounded-xl border border-border/40 shadow-sm backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">
+            Filtros de Niveles
+          </h3>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Fuerza mínima:</span>
+          <Select value={minStrength.toString()} onValueChange={(v) => setMinStrength(Number(v))}>
+            <SelectTrigger className="h-9 w-full sm:w-44 bg-background border-border/60 rounded-lg hover:border-primary/40 transition-colors">
+              <SelectValue placeholder="Fuerza" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0" className="cursor-pointer">Todos (0%+)</SelectItem>
+              <SelectItem value="0.5" className="cursor-pointer">Moderado (50%+)</SelectItem>
+              <SelectItem value="0.7" className="cursor-pointer">Fuerte (70%+)</SelectItem>
+              <SelectItem value="0.9" className="cursor-pointer">Muy Fuerte (90%+)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-3 items-center text-[10px] text-muted-foreground uppercase font-semibold bg-muted/20 p-2 rounded-lg border border-border/50">
         <span className="text-foreground/70 mr-1">Leyenda:</span>
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div>Soporte</div>

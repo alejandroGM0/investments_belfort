@@ -153,6 +153,33 @@ def _build_trade_setup(
     )
 
 
+import threading
+import time as _time
+
+# ---------------------------------------------------------------------------
+# Lightweight TTL cache for run() – prevents re-computing the full analysis
+# when multiple API endpoints call it within the same polling cycle.
+# Max staleness: _CACHE_TTL seconds (30 s).
+# ---------------------------------------------------------------------------
+_CACHE_TTL: float = 30.0
+_cache: dict[tuple[str, str, str], tuple[float, AnalysisReport]] = {}
+_cache_lock = threading.Lock()
+
+
+def _cache_get(key: tuple[str, str, str]) -> AnalysisReport | None:
+    entry = _cache.get(key)
+    if entry is None:
+        return None
+    ts, report = entry
+    if _time.monotonic() - ts > _CACHE_TTL:
+        return None
+    return report
+
+
+def _cache_set(key: tuple[str, str, str], report: AnalysisReport) -> None:
+    _cache[key] = (_time.monotonic(), report)
+
+
 def run(
     symbol: str,
     tf: str,
@@ -171,6 +198,29 @@ def run(
     refresh:   force OHLCV refresh from Binance
     extra_tfs: additional timeframes for multi-TF trend (default: ['1D'] when tf=='4h')
     """
+    # --- Check TTL cache (skip when caller forces refresh) ---
+    cache_key = (symbol.upper(), tf, since)
+    if not refresh:
+        with _cache_lock:
+            cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+    report = _run_impl(symbol, tf, since, refresh, extra_tfs)
+
+    with _cache_lock:
+        _cache_set(cache_key, report)
+    return report
+
+
+def _run_impl(
+    symbol: str,
+    tf: str,
+    since: str = "2y",
+    refresh: bool = False,
+    extra_tfs: list[str] | None = None,
+) -> AnalysisReport:
+    """Inner implementation – always computes from scratch."""
     if extra_tfs is None:
         extra_tfs = ["1D"] if tf in ("1h", "4h") else []
 
@@ -192,33 +242,58 @@ def run(
     primary_trend = tf_trends[tf]
     htf_trend = tf_trends.get(extra_tfs[0]) if extra_tfs else None
 
-    # --- Detect all patterns on primary TF ---
+    # --- Levels (single call with strengths; derive plain list for near_sr) ---
+    raw_levels_with_strengths = detect_levels(df, return_strengths=True)
+    support_prices = [p for p, _ in raw_levels_with_strengths["support"]]
+    resistance_prices = [p for p, _ in raw_levels_with_strengths["resistance"]]
+    atr_proxy = float((df["high"] - df["low"]).rolling(14).mean().iloc[-1] or 1)
+    close_price = float(df["close"].iloc[-1])
+    near_sr = any(
+        abs(close_price - s) < atr_proxy * 0.5
+        for s in support_prices + resistance_prices
+    )
+
+    # --- Single pass: detect all ~80 patterns + collect active signals ---
     active_signals: list[PatternSignal] = []
-    all_detected: list[DetectedPattern] = []
     last_bar_time = int(df["time"].iloc[-1])
+    # Store raw detection results so we can enrich after scoring
+    _detection_cache: list[tuple[reg.PatternSpec, int, int | None, int, int]] = []
 
     for spec in reg.REGISTRY:
         try:
             series = spec.detect(df_enriched)
         except Exception:
             continue
+
         last_val = int(series.iloc[-1])
+
+        # Collect active signal for confluence scoring
         if last_val != 0:
-            sig = PatternSignal(
+            active_signals.append(PatternSignal(
                 pattern_id=spec.id,
                 name=spec.name,
                 category=spec.category,
                 direction=last_val,
                 bar_time=last_bar_time,
-            )
-            active_signals.append(sig)
+            ))
 
-    # --- Levels ---
-    raw_levels = detect_levels(df)
-    near_sr = bool(
-        any(abs(float(df["close"].iloc[-1]) - s) < float((df["high"] - df["low"]).rolling(14).mean().iloc[-1] or 1) * 0.5
-            for s in raw_levels["support"] + raw_levels["resistance"])
-    )
+        # Compute recency metadata (used after scoring to build DetectedPattern)
+        active_bars = series[series != 0]
+        if not active_bars.empty:
+            last_active_idx = int(active_bars.index[-1])
+            bars_since: int | None = len(df_enriched) - 1 - last_active_idx
+            last_bar_time_pat = int(df_enriched["time"].iloc[last_active_idx])
+            last_dir = int(active_bars.iloc[-1])
+        else:
+            bars_since = None
+            last_bar_time_pat = 0
+            last_dir = 0
+
+        occurrences_100 = int((series.tail(100) != 0).sum())
+
+        _detection_cache.append((spec, last_val, bars_since, last_bar_time_pat, occurrences_100))
+        # store last_dir on the tuple for direction fallback
+        _detection_cache[-1] = (spec, last_val, bars_since, last_bar_time_pat, occurrences_100, last_dir)  # type: ignore[assignment]
 
     # --- Backtest win rates (if available) ---
     win_rates = all_win_rates(symbol, tf)
@@ -231,33 +306,14 @@ def run(
         backtest_win_rates=win_rates,
     )
 
-    # --- Build full pattern list (all ~80, not just last-bar active) ---
+    # --- Build full pattern list from cached detections ---
     sig_map = {s.pattern_id: s for s in result.signals}
     highlight_ids = {s.pattern_id for s in result.highlights}
+    all_detected: list[DetectedPattern] = []
 
-    for spec in reg.REGISTRY:
-        try:
-            series = spec.detect(df_enriched)
-        except Exception:
-            continue
+    for entry in _detection_cache:
+        spec, last_val, bars_since, last_bar_time_pat, occurrences_100, last_dir = entry  # type: ignore[misc]
 
-        last_val = int(series.iloc[-1])
-
-        # Count occurrences in last 100 bars
-        recent_window = series.tail(100)
-        occurrences_100 = int((recent_window != 0).sum())
-
-        # Find most recent activation and how long ago it was
-        active_bars = series[series != 0]
-        if not active_bars.empty:
-            last_active_idx = int(active_bars.index[-1])
-            bars_since = len(df_enriched) - 1 - last_active_idx
-            last_bar_time_pat = int(df_enriched["time"].iloc[last_active_idx])
-        else:
-            bars_since = None
-            last_bar_time_pat = 0
-
-        # Status: active (fires now) → recent (≤5 bars ago) → inactive
         if last_val != 0:
             status = "active"
         elif bars_since is not None and bars_since <= 5:
@@ -272,9 +328,7 @@ def run(
             pattern_id=spec.id,
             name=spec.name,
             category=spec.category,
-            direction=last_val if last_val != 0 else (
-                int(active_bars.iloc[-1]) if not active_bars.empty else 0
-            ),
+            direction=last_val if last_val != 0 else last_dir,
             bar_time=last_bar_time_pat,
             confidence=conf,
             highlight=spec.id in highlight_ids,
@@ -286,8 +340,7 @@ def run(
 
     highlights = [p for p in all_detected if p.highlight]
 
-    # --- Levels ---
-    raw_levels_with_strengths = detect_levels(df, return_strengths=True)
+    # --- Level objects ---
     level_objs: list[Level] = []
     for price, strength in raw_levels_with_strengths["support"]:
         level_objs.append(Level(price=round(price, 6), level_type="support", strength=strength))

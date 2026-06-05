@@ -8,9 +8,14 @@ import {
   Target,
   SlidersHorizontal,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface ChartOverlays {
@@ -77,40 +82,37 @@ export function ChartToolbar({
   return (
     <TooltipProvider delay={600}>
       <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1">
-        {OVERLAYS.map((o, i) => {
+        {OVERLAYS.map((o) => {
           const Icon = o.icon;
           const active = overlays[o.key];
           return (
             <Tooltip key={o.key}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onOverlayChange(o.key)}
+              <TooltipTrigger
+                onClick={() => onOverlayChange(o.key)}
+                className={cn(
+                  "inline-flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium transition-all select-none",
+                  active
+                    ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/60",
+                )}
+              >
+                <Icon
                   className={cn(
-                    "inline-flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium transition-all select-none",
+                    "h-3.5 w-3.5 shrink-0 transition-colors",
                     active
-                      ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/60"
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 transition-colors",
-                      active
-                        ? o.key === "projection"
-                          ? "text-violet-500"
-                          : o.key === "setup"
+                      ? o.key === "projection"
+                        ? "text-violet-500"
+                        : o.key === "setup"
                           ? "text-amber-500"
                           : o.key === "levels"
-                          ? "text-emerald-500"
-                          : o.key === "patterns"
-                          ? "text-sky-500"
-                          : "text-blue-500"
-                        : ""
-                    )}
-                  />
-                  <span className="hidden sm:inline">{o.label}</span>
-                </button>
+                            ? "text-emerald-500"
+                            : o.key === "patterns"
+                              ? "text-sky-500"
+                              : "text-blue-500"
+                      : "",
+                  )}
+                />
+                <span className="hidden sm:inline">{o.label}</span>
               </TooltipTrigger>
               <TooltipContent side="bottom">{o.tip}</TooltipContent>
             </Tooltip>
@@ -120,23 +122,20 @@ export function ChartToolbar({
         <Separator orientation="vertical" className="mx-1 h-5" />
 
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onOpenFilters}
-              className={cn(
-                "relative transition-colors",
-                activeFilterCount > 0 && "text-primary"
-              )}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground leading-none">
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
+          <TooltipTrigger
+            onClick={onOpenFilters}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon-sm" }),
+              "relative transition-colors",
+              activeFilterCount > 0 && "text-primary",
+            )}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground leading-none">
+                {activeFilterCount}
+              </span>
+            )}
           </TooltipTrigger>
           <TooltipContent side="bottom">Filtros y umbrales</TooltipContent>
         </Tooltip>

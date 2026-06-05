@@ -63,6 +63,13 @@ export default function AssetSummaryPage({ params }: { params: Promise<{ symbol:
             subtitle="Score técnico"
             icon={BarChart2}
             trend={analysis.summary.trend === "bullish" ? "up" : analysis.summary.trend === "bearish" ? "down" : "neutral"}
+            info={
+              <div className="space-y-1.5">
+                <p><strong>¿Qué es la confluencia?</strong></p>
+                <p className="text-muted-foreground">Ocurre cuando múltiples señales técnicas apuntan en la misma dirección.</p>
+                <p className="text-muted-foreground">Este score (0-100) evalúa la fuerza del activo combinando patrones, tendencia y soportes/resistencias.</p>
+              </div>
+            }
           />
         ) : <CardSkeleton />}
 

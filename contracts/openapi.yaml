@@ -9,6 +9,43 @@ servers:
     description: Local gateway
 
 paths:
+  /ticker/{symbol}:
+    get:
+      operationId: getTicker
+      summary: Live spot price from Binance
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Live ticker
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TickerResponse"
+
+  /tickers:
+    get:
+      operationId: getTickers
+      summary: Live prices for multiple symbols
+      parameters:
+        - name: symbols
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Comma-separated symbols
+      responses:
+        "200":
+          description: Batch tickers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TickersResponse"
+
   /ohlcv/{symbol}:
     get:
       operationId: getOhlcv
@@ -28,6 +65,18 @@ paths:
           schema:
             type: integer
             default: 500
+        - name: history
+          in: query
+          schema:
+            type: string
+            enum: [2y, 5y, max]
+            default: 5y
+        - name: live
+          in: query
+          schema:
+            type: boolean
+            default: true
+            description: Refresh latest candles from Binance before respond
       responses:
         "200":
           description: OHLCV data
@@ -189,6 +238,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/ChartOverlaysResponse"
 
+  /analysis/{symbol}/operational-setup:
+    get:
+      operationId: getOperationalSetup
+      summary: Exhaustive operational setup with probabilities, ETA and evidence
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: history
+          in: query
+          schema:
+            $ref: "#/components/schemas/HistoryDepth"
+      responses:
+        "200":
+          description: Operational setup analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalSetupResponse"
+
   /sentiment/{symbol}:
     get:
       operationId: getSentiment
@@ -268,6 +343,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BacktestResponse"
+
+  /backtest/{symbol}/runs:
+    get:
+      operationId: getBacktestRuns
+      summary: Paginated history of all saved backtest grid combos
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tf
+          in: query
+          schema:
+            $ref: "#/components/schemas/Timeframe"
+        - name: pattern_id
+          in: query
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            default: sharpe
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 200
+            minimum: 1
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: Backtest run history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BacktestRunsResponse"
 
   /backtest/{symbol}/refresh:
     post:
@@ -475,7 +594,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardResponse"
 
-
 components:
   schemas:
     Timeframe:
@@ -497,7 +615,15 @@ components:
 
     PatternCategory:
       type: string
-      enum: ["candles", "chart_patterns", "trend", "structure", "indicators", "levels"]
+      enum:
+        [
+          "candles",
+          "chart_patterns",
+          "trend",
+          "structure",
+          "indicators",
+          "levels",
+        ]
 
     SentimentTone:
       type: string
@@ -533,6 +659,57 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OhlcvCandle"
+        last_candle_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+        live:
+          type: boolean
+
+    TickerResponse:
+      type: object
+      required: [symbol, price, updated_at]
+      properties:
+        symbol:
+          type: string
+        price:
+          type: number
+        bid:
+          type: number
+          nullable: true
+        ask:
+          type: number
+          nullable: true
+        change_24h_pct:
+          type: number
+          nullable: true
+        high_24h:
+          type: number
+          nullable: true
+        low_24h:
+          type: number
+          nullable: true
+        volume_24h:
+          type: number
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+
+    TickersResponse:
+      type: object
+      required: [tickers, updated_at]
+      properties:
+        tickers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TickerResponse"
+        updated_at:
+          type: string
+          format: date-time
 
     PatternItem:
       type: object
@@ -780,6 +957,259 @@ components:
         trade_setup:
           $ref: "#/components/schemas/TradeSetup"
 
+    OperationalProbability:
+      type: object
+      required: [win, loss, low, high, confidence, sample_size, source]
+      properties:
+        win:
+          type: number
+          minimum: 0
+          maximum: 1
+        loss:
+          type: number
+          minimum: 0
+          maximum: 1
+        low:
+          type: number
+          minimum: 0
+          maximum: 1
+        high:
+          type: number
+          minimum: 0
+          maximum: 1
+        confidence:
+          type: string
+          enum: [low, medium, high]
+        sample_size:
+          type: integer
+        source:
+          type: string
+          enum: [backtest_adjusted, technical_proxy]
+        historical_win_rate:
+          type: number
+          nullable: true
+
+    OperationalExpectancy:
+      type: object
+      required: [r, return_pct, label]
+      properties:
+        r:
+          type: number
+        return_pct:
+          type: number
+        label:
+          type: string
+          enum: [positive, neutral, negative]
+
+    OperationalTimeEstimate:
+      type: object
+      required:
+        [
+          tp_bars_min,
+          tp_bars_median,
+          tp_bars_max,
+          tp_human,
+          sl_bars_median,
+          sl_human,
+          confidence,
+          atr,
+          atr_pct,
+          tp_distance_atr,
+          sl_distance_atr,
+        ]
+      properties:
+        tp_bars_min:
+          type: integer
+        tp_bars_median:
+          type: integer
+        tp_bars_max:
+          type: integer
+        tp_human:
+          type: string
+        sl_bars_median:
+          type: integer
+        sl_human:
+          type: string
+        confidence:
+          type: string
+          enum: [low, medium, high]
+        atr:
+          type: number
+        atr_pct:
+          type: number
+        tp_distance_atr:
+          type: number
+        sl_distance_atr:
+          type: number
+
+    OperationalBacktestContext:
+      type: object
+      required:
+        [
+          pattern_id,
+          pattern_name,
+          total_trades,
+          win_rate,
+          profit_factor,
+          sharpe,
+          max_drawdown,
+          expectancy,
+        ]
+      properties:
+        pattern_id:
+          type: string
+        pattern_name:
+          type: string
+        pattern_category:
+          type: string
+          nullable: true
+        total_trades:
+          type: integer
+        win_rate:
+          type: number
+        profit_factor:
+          type: number
+        sharpe:
+          type: number
+        max_drawdown:
+          type: number
+        expectancy:
+          type: number
+        avg_win:
+          type: number
+        avg_loss:
+          type: number
+        params:
+          type: object
+          additionalProperties: true
+        run_at:
+          type: string
+          nullable: true
+
+    OperationalEvidence:
+      type: object
+      required: [label, impact, detail]
+      properties:
+        label:
+          type: string
+        impact:
+          type: string
+          enum: [positive, neutral, negative]
+        detail:
+          type: string
+
+    OperationalScenario:
+      type: object
+      required: [name, trigger, expected_move, action]
+      properties:
+        name:
+          type: string
+        probability:
+          type: number
+          nullable: true
+        trigger:
+          type: string
+        expected_move:
+          type: string
+        action:
+          type: string
+
+    OperationalSetupResponse:
+      type: object
+      required:
+        [
+          symbol,
+          tf,
+          direction,
+          decision,
+          decision_label,
+          decision_score,
+          confidence_score,
+          confluence_score,
+          evidence,
+          warnings,
+          invalidation,
+          scenarios,
+          updated_at,
+        ]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        direction:
+          $ref: "#/components/schemas/TrendDirection"
+        decision:
+          type: string
+          enum: [strong_long, long, wait, avoid, short, strong_short]
+        decision_label:
+          type: string
+        decision_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        confidence_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        confluence_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        entry:
+          type: number
+          nullable: true
+        stop_loss:
+          type: number
+          nullable: true
+        take_profit:
+          type: number
+          nullable: true
+        risk_reward:
+          type: number
+          nullable: true
+        risk_pct:
+          type: number
+          nullable: true
+        reward_pct:
+          type: number
+          nullable: true
+        probability:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/OperationalProbability"
+        expectancy:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/OperationalExpectancy"
+        time_estimate:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/OperationalTimeEstimate"
+        backtest_context:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/OperationalBacktestContext"
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperationalEvidence"
+        warnings:
+          type: array
+          items:
+            type: string
+        invalidation:
+          type: array
+          items:
+            type: string
+        scenarios:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperationalScenario"
+        updated_at:
+          type: string
+          format: date-time
+
     SentimentDataPoint:
       type: object
       required: [time, score, mentions]
@@ -889,6 +1319,71 @@ components:
         value:
           type: number
 
+    BacktestTopPattern:
+      type: object
+      required: [metrics, selection]
+      properties:
+        metrics:
+          type: object
+          required:
+            [total_trades, win_rate, profit_factor, max_drawdown, sharpe]
+          properties:
+            total_trades:
+              type: integer
+            win_rate:
+              type: number
+            profit_factor:
+              type: number
+            max_drawdown:
+              type: number
+            sharpe:
+              type: number
+            avg_return:
+              type: number
+            avg_win:
+              type: number
+            avg_loss:
+              type: number
+            expectancy:
+              type: number
+            total_return:
+              type: number
+            loss_rate:
+              type: number
+        equity_curve:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquityPoint"
+        equity_curve_estimated:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        selection:
+          type: object
+          required: [pattern_id]
+          properties:
+            pattern_id:
+              type: string
+            pattern_name:
+              type: string
+            pattern_category:
+              type: string
+              nullable: true
+            params:
+              type: object
+              additionalProperties: true
+            params_hash:
+              type: string
+              nullable: true
+            sort_metric:
+              type: string
+            run_at:
+              type: string
+              format: date-time
+              nullable: true
+
     BacktestResponse:
       type: object
       required: [symbol, strategy, tf, metrics, updated_at, status]
@@ -905,7 +1400,8 @@ components:
           description: empty = no results yet, running = job in progress, ready = results available
         metrics:
           type: object
-          required: [total_trades, win_rate, profit_factor, max_drawdown, sharpe]
+          required:
+            [total_trades, win_rate, profit_factor, max_drawdown, sharpe]
           properties:
             total_trades:
               type: integer
@@ -919,10 +1415,26 @@ components:
               type: number
             avg_return:
               type: number
+            avg_win:
+              type: number
+            avg_loss:
+              type: number
+            expectancy:
+              type: number
+            total_return:
+              type: number
+            loss_rate:
+              type: number
         equity_curve:
           type: array
           items:
             $ref: "#/components/schemas/EquityPoint"
+        equity_curve_estimated:
+          type: boolean
+        top_patterns:
+          type: array
+          items:
+            $ref: "#/components/schemas/BacktestTopPattern"
         updated_at:
           type: string
           format: date-time
@@ -970,6 +1482,85 @@ components:
           $ref: "#/components/schemas/BacktestJobSummary"
         last_job:
           $ref: "#/components/schemas/BacktestJobSummary"
+
+    BacktestRunsResponse:
+      type: object
+      required: [symbol, tf, total, runs]
+      properties:
+        symbol:
+          type: string
+        tf:
+          $ref: "#/components/schemas/Timeframe"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        sort_by:
+          type: string
+        pattern_id:
+          type: string
+          nullable: true
+        runs:
+          type: array
+          items:
+            $ref: "#/components/schemas/BacktestRunItem"
+
+    BacktestRunItem:
+      type: object
+      required: [run_key, pattern_id, pattern_name, metrics]
+      properties:
+        run_key:
+          type: string
+        pattern_id:
+          type: string
+        pattern_name:
+          type: string
+        pattern_category:
+          type: string
+          nullable: true
+        params:
+          type: object
+          additionalProperties: true
+        params_raw:
+          type: object
+          additionalProperties: true
+        metrics:
+          type: object
+          properties:
+            total_trades:
+              type: integer
+            win_rate:
+              type: number
+            profit_factor:
+              type: number
+            max_drawdown:
+              type: number
+            sharpe:
+              type: number
+            avg_return:
+              type: number
+            avg_win:
+              type: number
+            avg_loss:
+              type: number
+            expectancy:
+              type: number
+            total_return:
+              type: number
+            loss_rate:
+              type: number
+        equity_curve:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquityPoint"
+        equity_curve_estimated:
+          type: boolean
+        run_at:
+          type: string
+          format: date-time
+          nullable: true
 
     BacktestJobSummary:
       type: object

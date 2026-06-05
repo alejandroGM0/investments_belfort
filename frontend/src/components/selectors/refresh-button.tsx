@@ -32,7 +32,9 @@ export function RefreshButton() {
     }
 
     // Then invalidate React Query caches
-    await queryClient.invalidateQueries({ queryKey: ["ohlcv", apiSymbol, timeframe] });
+    await queryClient.invalidateQueries({ queryKey: ["ticker", apiSymbol] });
+    await queryClient.invalidateQueries({ queryKey: ["tickers"] });
+    await queryClient.invalidateQueries({ queryKey: ["ohlcv", apiSymbol] });
     await queryClient.invalidateQueries({ queryKey: ["analysis", apiSymbol, timeframe] });
     await queryClient.invalidateQueries({ queryKey: ["sentiment", displaySymbol] });
     await queryClient.invalidateQueries({ queryKey: ["news", displaySymbol] });

@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/ticker/{symbol}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live spot price from Binance */
+        get: operations["getTicker"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live prices for multiple symbols */
+        get: operations["getTickers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ohlcv/{symbol}": {
         parameters: {
             query?: never;
@@ -72,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/analysis/{symbol}/operational-setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exhaustive operational setup with probabilities, ETA and evidence */
+        get: operations["getOperationalSetup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sentiment/{symbol}": {
         parameters: {
             query?: never;
@@ -115,6 +166,23 @@ export interface paths {
         };
         /** Get backtest results for a symbol and strategy */
         get: operations["getBacktest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backtest/{symbol}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paginated history of all saved backtest grid combos */
+        get: operations["getBacktestRuns"];
         put?: never;
         post?: never;
         delete?: never;
@@ -308,6 +376,28 @@ export interface components {
             symbol: string;
             tf: components["schemas"]["Timeframe"];
             candles: components["schemas"]["OhlcvCandle"][];
+            /** Format: date-time */
+            last_candle_at?: string | null;
+            /** Format: date-time */
+            updated_at?: string;
+            live?: boolean;
+        };
+        TickerResponse: {
+            symbol: string;
+            price: number;
+            bid?: number | null;
+            ask?: number | null;
+            change_24h_pct?: number | null;
+            high_24h?: number | null;
+            low_24h?: number | null;
+            volume_24h?: number | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        TickersResponse: {
+            tickers: components["schemas"]["TickerResponse"][];
+            /** Format: date-time */
+            updated_at: string;
         };
         PatternItem: {
             id: string;
@@ -421,6 +511,95 @@ export interface components {
             levels: components["schemas"]["Level"][];
             trade_setup?: components["schemas"]["TradeSetup"];
         };
+        OperationalProbability: {
+            win: number;
+            loss: number;
+            low: number;
+            high: number;
+            /** @enum {string} */
+            confidence: "low" | "medium" | "high";
+            sample_size: number;
+            /** @enum {string} */
+            source: "backtest_adjusted" | "technical_proxy";
+            historical_win_rate?: number | null;
+        };
+        OperationalExpectancy: {
+            r: number;
+            return_pct: number;
+            /** @enum {string} */
+            label: "positive" | "neutral" | "negative";
+        };
+        OperationalTimeEstimate: {
+            tp_bars_min: number;
+            tp_bars_median: number;
+            tp_bars_max: number;
+            tp_human: string;
+            sl_bars_median: number;
+            sl_human: string;
+            /** @enum {string} */
+            confidence: "low" | "medium" | "high";
+            atr: number;
+            atr_pct: number;
+            tp_distance_atr: number;
+            sl_distance_atr: number;
+        };
+        OperationalBacktestContext: {
+            pattern_id: string;
+            pattern_name: string;
+            pattern_category?: string | null;
+            total_trades: number;
+            win_rate: number;
+            profit_factor: number;
+            sharpe: number;
+            max_drawdown: number;
+            expectancy: number;
+            avg_win?: number;
+            avg_loss?: number;
+            params?: {
+                [key: string]: unknown;
+            };
+            run_at?: string | null;
+        };
+        OperationalEvidence: {
+            label: string;
+            /** @enum {string} */
+            impact: "positive" | "neutral" | "negative";
+            detail: string;
+        };
+        OperationalScenario: {
+            name: string;
+            probability?: number | null;
+            trigger: string;
+            expected_move: string;
+            action: string;
+        };
+        OperationalSetupResponse: {
+            symbol: string;
+            tf: components["schemas"]["Timeframe"];
+            direction: components["schemas"]["TrendDirection"];
+            /** @enum {string} */
+            decision: "strong_long" | "long" | "wait" | "avoid" | "short" | "strong_short";
+            decision_label: string;
+            decision_score: number;
+            confidence_score: number;
+            confluence_score: number;
+            entry?: number | null;
+            stop_loss?: number | null;
+            take_profit?: number | null;
+            risk_reward?: number | null;
+            risk_pct?: number | null;
+            reward_pct?: number | null;
+            probability?: components["schemas"]["OperationalProbability"] | null;
+            expectancy?: components["schemas"]["OperationalExpectancy"] | null;
+            time_estimate?: components["schemas"]["OperationalTimeEstimate"] | null;
+            backtest_context?: components["schemas"]["OperationalBacktestContext"] | null;
+            evidence: components["schemas"]["OperationalEvidence"][];
+            warnings: string[];
+            invalidation: string[];
+            scenarios: components["schemas"]["OperationalScenario"][];
+            /** Format: date-time */
+            updated_at: string;
+        };
         SentimentDataPoint: {
             /** Format: date-time */
             time: string;
@@ -471,6 +650,127 @@ export interface components {
             date: string;
             value: number;
         };
+        BacktestTopPattern: {
+            metrics: {
+                total_trades: number;
+                win_rate: number;
+                profit_factor: number;
+                max_drawdown: number;
+                sharpe: number;
+                avg_return?: number;
+                avg_win?: number;
+                avg_loss?: number;
+                expectancy?: number;
+                total_return?: number;
+                loss_rate?: number;
+            };
+            equity_curve?: components["schemas"]["EquityPoint"][];
+            equity_curve_estimated?: boolean;
+            /** Format: date-time */
+            updated_at?: string | null;
+            selection: {
+                pattern_id: string;
+                pattern_name?: string;
+                pattern_category?: string | null;
+                params?: {
+                    [key: string]: unknown;
+                };
+                params_hash?: string | null;
+                sort_metric?: string;
+                /** Format: date-time */
+                run_at?: string | null;
+            };
+        };
+        BacktestResponse: {
+            symbol: string;
+            strategy: string;
+            tf: components["schemas"]["Timeframe"];
+            /**
+             * @description empty = no results yet, running = job in progress, ready = results available
+             * @enum {string}
+             */
+            status: "empty" | "running" | "ready";
+            metrics: {
+                total_trades: number;
+                win_rate: number;
+                profit_factor: number;
+                max_drawdown: number;
+                sharpe: number;
+                avg_return?: number;
+                avg_win?: number;
+                avg_loss?: number;
+                expectancy?: number;
+                total_return?: number;
+                loss_rate?: number;
+            };
+            equity_curve?: components["schemas"]["EquityPoint"][];
+            equity_curve_estimated?: boolean;
+            top_patterns?: components["schemas"]["BacktestTopPattern"][];
+            /** Format: date-time */
+            updated_at: string | null;
+            note?: string;
+            run_summary?: {
+                /** Format: date-time */
+                last_run_at?: string | null;
+                patterns_with_results?: number;
+                total_combos_saved?: number;
+                /** @enum {string|null} */
+                grid_mode?: "quick" | "full" | null;
+                selection_metric?: string;
+            };
+            selection?: {
+                pattern_id?: string;
+                pattern_name?: string;
+                pattern_category?: string | null;
+                sort_metric?: string;
+                /** Format: date-time */
+                run_at?: string | null;
+                params?: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            active_job?: components["schemas"]["BacktestJobSummary"];
+            last_job?: components["schemas"]["BacktestJobSummary"];
+        };
+        BacktestRunsResponse: {
+            symbol: string;
+            tf: components["schemas"]["Timeframe"];
+            total: number;
+            limit?: number;
+            offset?: number;
+            sort_by?: string;
+            pattern_id?: string | null;
+            runs: components["schemas"]["BacktestRunItem"][];
+        };
+        BacktestRunItem: {
+            run_key: string;
+            pattern_id: string;
+            pattern_name: string;
+            pattern_category?: string | null;
+            params?: {
+                [key: string]: unknown;
+            };
+            params_raw?: {
+                [key: string]: unknown;
+            };
+            metrics: {
+                total_trades?: number;
+                win_rate?: number;
+                profit_factor?: number;
+                max_drawdown?: number;
+                sharpe?: number;
+                avg_return?: number;
+                avg_win?: number;
+                avg_loss?: number;
+                expectancy?: number;
+                total_return?: number;
+                loss_rate?: number;
+            };
+            equity_curve?: components["schemas"]["EquityPoint"][];
+            equity_curve_estimated?: boolean;
+            /** Format: date-time */
+            run_at?: string | null;
+        };
         BacktestJobSummary: {
             id?: string;
             kind?: string;
@@ -488,45 +788,6 @@ export interface components {
             progress_total?: number;
             progress_message?: string;
             result?: unknown;
-        };
-        BacktestResponse: {
-            symbol: string;
-            strategy: string;
-            tf: components["schemas"]["Timeframe"];
-            /** @enum {string} */
-            status: "empty" | "running" | "ready";
-            metrics: {
-                total_trades: number;
-                win_rate: number;
-                profit_factor: number;
-                max_drawdown: number;
-                sharpe: number;
-                avg_return?: number;
-            };
-            equity_curve?: components["schemas"]["EquityPoint"][];
-            /** Format: date-time */
-            updated_at: string | null;
-            note?: string;
-            run_summary?: {
-                /** Format: date-time */
-                last_run_at?: string | null;
-                patterns_with_results?: number;
-                total_combos_saved?: number;
-                /** @enum {string} */
-                grid_mode?: "quick" | "full" | null;
-                selection_metric?: string;
-            };
-            selection?: {
-                pattern_id: string;
-                pattern_name: string;
-                pattern_category?: string | null;
-                sort_metric?: string;
-                /** Format: date-time */
-                run_at?: string | null;
-                params?: Record<string, unknown>;
-            } | null;
-            active_job?: components["schemas"]["BacktestJobSummary"] | null;
-            last_job?: components["schemas"]["BacktestJobSummary"] | null;
         };
         RankingItem: {
             rank: number;
@@ -632,11 +893,57 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getTicker: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Live ticker */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TickerResponse"];
+                };
+            };
+        };
+    };
+    getTickers: {
+        parameters: {
+            query: {
+                symbols: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Batch tickers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TickersResponse"];
+                };
+            };
+        };
+    };
     getOhlcv: {
         parameters: {
             query?: {
                 tf?: components["schemas"]["Timeframe"];
                 limit?: number;
+                history?: "2y" | "5y" | "max";
+                live?: boolean;
             };
             header?: never;
             path: {
@@ -746,6 +1053,31 @@ export interface operations {
             };
         };
     };
+    getOperationalSetup: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+                history?: components["schemas"]["HistoryDepth"];
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operational setup analysis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationalSetupResponse"];
+                };
+            };
+        };
+    };
     getSentiment: {
         parameters: {
             query?: {
@@ -816,6 +1148,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BacktestResponse"];
+                };
+            };
+        };
+    };
+    getBacktestRuns: {
+        parameters: {
+            query?: {
+                tf?: components["schemas"]["Timeframe"];
+                pattern_id?: string;
+                sort_by?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Backtest run history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacktestRunsResponse"];
                 };
             };
         };

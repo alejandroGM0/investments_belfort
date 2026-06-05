@@ -6,6 +6,7 @@ import { TimeframeSelect } from "@/components/selectors/timeframe-select";
 import { RefreshButton } from "@/components/selectors/refresh-button";
 import { HistorySelect } from "@/components/selectors/history-select";
 import { LastUpdatedLabel } from "@/components/selectors/last-updated-label";
+import { LivePriceBadge } from "@/components/layout/live-price-badge";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function AppHeader() {
@@ -22,6 +23,7 @@ export function AppHeader() {
         <MainNav />
 
         <div className="ml-auto flex items-center gap-2">
+          <LivePriceBadge />
           <LastUpdatedLabel />
           <SymbolSelect navigateOnChange />
           <TimeframeSelect />

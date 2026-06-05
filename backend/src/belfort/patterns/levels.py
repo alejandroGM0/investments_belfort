@@ -10,111 +10,129 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks  # type: ignore[import]
-from sklearn.cluster import DBSCAN  # type: ignore[import]
+from scipy.signal import argrelextrema
 
 from belfort.patterns.registry import PatternSpec, register
 
 
 def detect_levels(
     df: pd.DataFrame,
-    eps_pct: float = 0.015,
-    min_samples: int = 2,
+    threshold_pct: float = 0.015,
+    window: int = 15,
+    min_touches: int = 1,
     return_strengths: bool = False,
 ) -> dict:
     """
     Return {'support': [price, ...], 'resistance': [price, ...]} clusters.
     If return_strengths is True, lists will contain (price, strength) tuples.
-    eps_pct: DBSCAN epsilon as fraction of current price.
+    Uses pivot detection (highest/lowest in 'window') + centroid clustering.
     """
-    if len(df) < 20:
+    if len(df) < window * 2 + 1:
         return {"support": [], "resistance": []}
 
-    highs = df["high"].to_numpy(float)
-    lows = df["low"].to_numpy(float)
-    price = float(df["close"].iloc[-1])
-
-    peak_idx, _ = find_peaks(highs, distance=5)
-    trough_idx, _ = find_peaks(-lows, distance=5)
-
-    resistance_prices = highs[peak_idx]
-    support_prices = lows[trough_idx]
-
-    def _cluster(prices: np.ndarray) -> list:
-        if len(prices) < min_samples:
-            if return_strengths:
-                return [(float(p), 0.3) for p in prices]
-            return prices.tolist()
-        eps = price * eps_pct
-        db = DBSCAN(eps=eps, min_samples=min_samples).fit(prices.reshape(-1, 1))
-        labels = db.labels_
-        centroids = []
-        counts = []
+    def _get_levels(is_support: bool) -> list:
+        prices = df["low" if is_support else "high"].to_numpy(float)
+        
+        # 1. Strict pivot detection using scipy's fast C-level argrelextrema
+        if is_support:
+            idx = argrelextrema(prices, np.less, order=window)[0]
+        else:
+            idx = argrelextrema(prices, np.greater, order=window)[0]
+            
+        pivots = prices[idx]
+        if len(pivots) == 0:
+            return []
+            
+        pivots_arr = np.sort(np.array(pivots))
+        
+        # 2. DBSCAN clustering on log prices
+        from sklearn.cluster import DBSCAN
+        
+        log_pivots = np.log(pivots_arr).reshape(-1, 1)
+        db = DBSCAN(eps=threshold_pct, min_samples=min_touches)
+        labels = db.fit_predict(log_pivots)
+        
+        clusters = []
         for label in set(labels):
             if label == -1:
                 continue
-            cluster_prices = prices[labels == label]
-            centroids.append(float(cluster_prices.mean()))
-            counts.append(len(cluster_prices))
-
-        # Include noise points as individual levels
-        noise = prices[labels == -1]
-
+            clusters.append(pivots_arr[labels == label])
+        
+        # 3. Format output
+        results_with_strength = []
+        for c in clusters:
+            touches = len(c)
+            if touches < min_touches:
+                continue
+                
+            c_price = float(np.mean(c))
+            # Strength mapping: 1 touch = 0.3, 2 = 0.5, 3 = 0.7, 4+ = 1.0
+            if touches == 1:
+                strength = 0.3
+            elif touches == 2:
+                strength = 0.5
+            elif touches == 3:
+                strength = 0.7
+            else:
+                strength = 1.0
+                
+            results_with_strength.append((c_price, float(strength)))
+            
+        results_with_strength.sort(key=lambda x: x[0])
+        
         if return_strengths:
-            results = []
-            # 1 touch (noise) -> strength 0.3
-            # 2 touches -> strength 0.5
-            # 3 touches -> strength 0.7
-            # 4+ touches -> strength 1.0
-            for c_price, count in zip(centroids, counts):
-                strength = 0.5 if count == 2 else (0.7 if count == 3 else 1.0)
-                results.append((c_price, strength))
-            for n_price in noise:
-                results.append((float(n_price), 0.3))
-            results.sort(key=lambda x: x[0])
-            return results
+            return results_with_strength
         else:
-            centroids.extend(noise.tolist())
-            return sorted(centroids)
+            return [p for p, _ in results_with_strength]
 
     return {
-        "support": _cluster(support_prices),
-        "resistance": _cluster(resistance_prices),
+        "support": _get_levels(is_support=True),
+        "resistance": _get_levels(is_support=False),
     }
 
 
 def _near_support(df: pd.DataFrame) -> pd.Series:
-    sig = pd.Series(0, index=df.index)
     if len(df) < 30:
-        return sig
+        return pd.Series(0, index=df.index)
+        
     levels = detect_levels(df)
     supports = levels["support"]
     if not supports:
-        return sig
+        return pd.Series(0, index=df.index)
+        
     # ATR approximation
-    atr_val = (df["high"] - df["low"]).rolling(14).mean().fillna(0)
-    for i in df.index:
-        c = df.loc[i, "close"]
-        a = atr_val.loc[i]
-        if any(abs(c - s) <= 0.5 * a for s in supports):
-            sig.loc[i] = 1
+    atr_val = (df["high"] - df["low"]).rolling(14).mean().fillna(0).to_numpy()
+    close_val = df["close"].to_numpy()
+    threshold = 0.5 * atr_val
+    
+    mask = np.zeros(len(df), dtype=bool)
+    for s in supports:
+        mask |= (np.abs(close_val - s) <= threshold)
+        
+    sig = pd.Series(0, index=df.index)
+    sig.iloc[mask] = 1
     return sig
 
 
 def _near_resistance(df: pd.DataFrame) -> pd.Series:
-    sig = pd.Series(0, index=df.index)
     if len(df) < 30:
-        return sig
+        return pd.Series(0, index=df.index)
+        
     levels = detect_levels(df)
     resistances = levels["resistance"]
     if not resistances:
-        return sig
-    atr_val = (df["high"] - df["low"]).rolling(14).mean().fillna(0)
-    for i in df.index:
-        c = df.loc[i, "close"]
-        a = atr_val.loc[i]
-        if any(abs(c - r) <= 0.5 * a for r in resistances):
-            sig.loc[i] = -1
+        return pd.Series(0, index=df.index)
+        
+    atr_val = (df["high"] - df["low"]).rolling(14).mean().fillna(0).to_numpy()
+    close_val = df["close"].to_numpy()
+    threshold = 0.5 * atr_val
+    
+    mask = np.zeros(len(df), dtype=bool)
+    for r in resistances:
+        mask |= (np.abs(close_val - r) <= threshold)
+        
+    sig = pd.Series(0, index=df.index)
+    sig.iloc[mask] = -1
     return sig
 
 

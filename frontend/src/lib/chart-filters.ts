@@ -47,14 +47,31 @@ export const PATTERN_CATEGORY_OPTIONS: { value: PatternCategory; label: string }
 ];
 
 export const PATTERN_STATUS_OPTIONS: { value: ChartPatternStatusFilter; label: string }[] = [
-  { value: "highlight", label: "Solo destacados" },
-  { value: "active", label: "Solo activos" },
-  { value: "recent", label: "Solo recientes" },
-  { value: "active_recent", label: "Activos + recientes" },
-  { value: "all", label: "Todos (con confianza)" },
+  { value: "highlight", label: "Destacados" },
+  { value: "active", label: "Activos" },
+  { value: "recent", label: "Recientes" },
+  { value: "active_recent", label: "Act. + rec." },
+  { value: "all", label: "Todos" },
 ];
 
 export function categoriesQuery(categories: PatternCategory[]): string | undefined {
   if (!categories.length) return undefined;
   return categories.join(",");
+}
+
+/** Count filter settings that differ from defaults (for toolbar badge). */
+export function countFilterDeviations(filters: ChartDisplayFilters): number {
+  const d = DEFAULT_CHART_FILTERS;
+  let n = 0;
+  if (filters.minPatternConfidence !== d.minPatternConfidence) n++;
+  if (filters.patternStatus !== d.patternStatus) n++;
+  if (filters.patternDirection !== d.patternDirection) n++;
+  if (filters.patternCategories.length > 0) n++;
+  if (filters.maxMarkers !== d.maxMarkers) n++;
+  if (filters.minLevelStrength !== d.minLevelStrength) n++;
+  if (filters.maxLevelsPerSide !== d.maxLevelsPerSide) n++;
+  if (filters.minConfluence !== d.minConfluence) n++;
+  if (filters.projectionBars !== d.projectionBars) n++;
+  if (filters.showTradeSetup !== d.showTradeSetup) n++;
+  return n;
 }

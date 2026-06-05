@@ -9,8 +9,25 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
 }
 
-function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+function PopoverTrigger({
+  asChild,
+  children,
+  render,
+  ...props
+}: PopoverPrimitive.Trigger.Props & { asChild?: boolean }) {
+  // Base UI uses `render`, not Radix `asChild` — map so callers avoid nested <button>s.
+  const triggerRender =
+    render ?? (asChild && React.isValidElement(children) ? children : undefined)
+
+  return (
+    <PopoverPrimitive.Trigger
+      data-slot="popover-trigger"
+      render={triggerRender}
+      {...props}
+    >
+      {triggerRender ? null : children}
+    </PopoverPrimitive.Trigger>
+  )
 }
 
 function PopoverContent({

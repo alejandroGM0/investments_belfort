@@ -7,7 +7,8 @@ import { LoadingSkeleton } from "@/components/feedback/loading-skeleton";
 import { ErrorState } from "@/components/feedback/error-state";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, TrendingUp } from "lucide-react";
+import { Calendar, TrendingUp, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export default function ContextPage({ params }: { params: Promise<{ symbol: string }> }) {
@@ -48,16 +49,37 @@ export default function ContextPage({ params }: { params: Promise<{ symbol: stri
                     <p className="text-sm font-medium">{ev.title}</p>
                     <p className="text-xs text-muted-foreground">{ev.date} · {ev.type}</p>
                   </div>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-xs font-medium border",
-                      ev.impact === "alto"
-                        ? "text-red-500 border-red-500/30 bg-red-500/10"
-                        : "text-yellow-500 border-yellow-500/30 bg-yellow-500/10"
-                    )}
-                  >
-                    {ev.impact}
-                  </span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border cursor-help transition-colors",
+                          ev.impact === "alto"
+                            ? "text-red-500 border-red-500/30 bg-red-500/10 hover:bg-red-500/20"
+                            : ev.impact === "medio"
+                              ? "text-yellow-500 border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20"
+                              : "text-emerald-500 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
+                        )}
+                      >
+                        {ev.impact}
+                        <Info className="h-3 w-3 opacity-50" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" align="end" className="w-64 p-3">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-xs">Impacto del Evento</h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Estimación de cómo este evento podría afectar la volatilidad del precio.
+                        </p>
+                        <div className="text-[11px] space-y-1.5 mt-2">
+                          <p><strong className="text-red-500">Alto:</strong> Decisiones macro (tipos de interés), actualizaciones críticas de la red (forks) o hitos regulatorios. <br/><span className="opacity-70">Suele causar alta volatilidad.</span></p>
+                          <p><strong className="text-yellow-500">Medio:</strong> Asociaciones secundarias, actualizaciones menores o métricas macroeconómicas de segundo orden. <br/><span className="opacity-70">Impacto moderado esperado.</span></p>
+                          <p><strong className="text-emerald-500">Bajo:</strong> AMAs, eventos de la comunidad o listados menores. <br/><span className="opacity-70">Suele tener efecto mínimo.</span></p>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ))}
             </div>

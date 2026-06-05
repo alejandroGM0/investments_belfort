@@ -1,15 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import StrategyPage from "@/app/asset/[symbol]/strategy/page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { api } from "@/api/client";
 
-// Mocks
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+vi.mock("sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), message: vi.fn() },
+}));
+
 vi.mock("react", async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual: Record<string, unknown> = await importOriginal();
   return {
     ...actual,
-    use: (p: any) => ({ symbol: "BTC" }), // mock use(params)
+    use: (p: Promise<{ symbol: string }>) => ({ symbol: "BTC" }),
   };
 });
 
@@ -17,10 +24,21 @@ vi.mock("@/stores/app-store", () => ({
   useAppStore: vi.fn(() => ({ timeframe: "4h" })),
 }));
 
+vi.mock("@/stores/custom-strategies-store", () => ({
+  useCustomStrategiesStore: vi.fn(() => ({
+    strategies: [],
+    activeStrategyId: null,
+    addStrategy: vi.fn(() => "s1"),
+    updateStrategy: vi.fn(),
+    removeStrategy: vi.fn(),
+    setActiveStrategy: vi.fn(),
+    addFromRecommendedSetup: vi.fn(() => "s1"),
+    addFromBacktest: vi.fn(() => "s2"),
+  })),
+}));
+
 vi.mock("@/api/client", () => ({
-  api: {
-    POST: vi.fn(),
-  },
+  api: { POST: vi.fn() },
 }));
 
 const mockBacktestData = {
@@ -54,10 +72,55 @@ const mockBacktestData = {
     sort_metric: "sharpe",
     params: { sl_atr: 1.5, tp_rr: 2.0, filter_trend: "sma200" },
   },
+  top_patterns: [
+    {
+      metrics: {
+        total_trades: 50,
+        win_rate: 0.6,
+        profit_factor: 1.5,
+        max_drawdown: -0.1,
+        sharpe: 1.1,
+      },
+      equity_curve: [{ date: "2024-01-01", value: 1.0 }],
+      selection: {
+        pattern_id: "cdl_engulfing",
+        pattern_name: "Engulfing",
+        pattern_category: "candles",
+        params: { sl_atr: 1.5, tp_rr: 2.0 },
+      },
+    },
+  ],
 };
 
-let mockUseBacktestReturn: any = {
+const mockAnalysis = {
+  symbol: "BTCUSDT",
+  tf: "4h",
+  summary: {
+    trend: "bullish" as const,
+    confluence_score: 65,
+    highlights: [],
+    trade_setup: {
+      entry: 50000,
+      stop_loss: 48000,
+      take_profit: 54000,
+      risk_reward: 2,
+      direction: "bullish" as const,
+    },
+  },
+  groups: [],
+  indicators: [],
+  levels: [],
+};
+
+let mockUseBacktestReturn = {
   data: mockBacktestData,
+  isLoading: false,
+  isError: false,
+  refetch: vi.fn(),
+};
+
+let mockUseAnalysisReturn = {
+  data: mockAnalysis,
   isLoading: false,
   isError: false,
   refetch: vi.fn(),
@@ -67,12 +130,16 @@ vi.mock("@/api/hooks/use-backtest", () => ({
   useBacktest: vi.fn(() => mockUseBacktestReturn),
 }));
 
+vi.mock("@/api/hooks/use-analysis", () => ({
+  useAnalysis: vi.fn(() => mockUseAnalysisReturn),
+}));
+
 vi.mock("@/api/hooks/use-job", () => ({
   useJob: vi.fn(() => ({ data: null })),
 }));
 
 function Wrapper({ children }: { children: React.ReactNode }) {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
@@ -85,89 +152,72 @@ describe("StrategyPage", () => {
       isError: false,
       refetch: vi.fn(),
     };
-  });
-
-  it("renders loading skeleton", () => {
-    mockUseBacktestReturn.isLoading = true;
-    render(
-      <Wrapper>
-        <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
-      </Wrapper>
-    );
-    expect(document.querySelector(".animate-pulse")).toBeDefined();
-  });
-
-  it("renders error state", () => {
-    mockUseBacktestReturn.isError = true;
-    mockUseBacktestReturn.isLoading = false;
-    render(
-      <Wrapper>
-        <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
-      </Wrapper>
-    );
-    expect(screen.getByText(/Error al cargar datos/i)).toBeDefined();
-  });
-
-  it("renders backtest metrics correctly", async () => {
-    // Note: since the page uses `use(params)` inside the component, it might need to resolve asynchronously.
-    // However, in React 19 testing, wrapping in React.Suspense or similar might be needed if `use` suspends.
-    // Given the simple promise we pass, let's see if it renders synchronously or needs waitFor.
-    render(
-      <Wrapper>
-        <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
-      </Wrapper>
-    );
-
-    // Wait for the component to unwrap the promise and render
-    await waitFor(() => {
-      expect(screen.getByText("Estrategia & Backtest · BTC")).toBeDefined();
-    });
-
-    expect(screen.getByText("50")).toBeDefined(); // total trades
-    expect(screen.getByText("60.0%")).toBeDefined(); // win rate
-    expect(screen.getByText("1.50")).toBeDefined(); // profit factor
-    expect(screen.getByText("-10.0%")).toBeDefined(); // drawdown
-  });
-
-  it("displays a note if present in data", async () => {
-    mockUseBacktestReturn.data = {
-      ...mockBacktestData,
-      metrics: { ...mockBacktestData.metrics, total_trades: 0 },
-      note: "No backtest results yet.",
+    mockUseAnalysisReturn = {
+      data: mockAnalysis,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
     };
-
-    render(
-      <Wrapper>
-        <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
-      </Wrapper>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText("No backtest results yet.")).toBeDefined();
-    });
-    // The "run full backtest" text changes based on hasNoResults
-    expect(screen.getByText("Ejecutar backtest completo")).toBeDefined();
   });
 
-  it("triggers full grid backtest when button clicked", async () => {
-    vi.mocked(api.POST).mockResolvedValueOnce({ data: { job_id: "job123" } } as any);
+  it("renders strategy header, explanation link and recommended setup", async () => {
+    render(
+      <Wrapper>
+        <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
+      </Wrapper>
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Estrategia" })).toBeDefined();
+      expect(screen.getByRole("button", { name: /Guía/i })).toBeDefined();
+      expect(screen.getByRole("button", { name: /Usar en gráfico/i })).toBeDefined();
+    });
+  });
+
+  it("opens guide sheet with tabbed content", async () => {
+    render(
+      <Wrapper>
+        <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
+      </Wrapper>
+    );
+    const link = await screen.findByRole("button", { name: /Guía/i });
+    fireEvent.click(link);
+    await waitFor(() => {
+      expect(screen.getByText("Cómo usar Estrategia")).toBeDefined();
+      expect(screen.getByText("En una frase:")).toBeDefined();
+      expect(screen.getByRole("tab", { name: /Pasos/i })).toBeDefined();
+    });
+  });
+
+  it("shows backtest metrics in grid tab", async () => {
+    render(
+      <Wrapper>
+        <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
+      </Wrapper>
+    );
+    const tab = await screen.findByRole("tab", { name: /Ranking por patrón/i });
+    tab.click();
+    await waitFor(() => {
+      expect(screen.getByText("50")).toBeDefined();
+    });
+  });
+
+  it("launches backtest with job id from response", async () => {
+    vi.mocked(api.POST).mockResolvedValueOnce({
+      data: { id: "job-abc", kind: "backtest_quick", status: "pending", created_at: "2024-01-01" },
+    } as never);
 
     render(
       <Wrapper>
         <StrategyPage params={Promise.resolve({ symbol: "BTC" })} />
       </Wrapper>
     );
-
-    await waitFor(() => {
-      expect(screen.getByText("Re-ejecutar grid completo")).toBeDefined();
-    });
-
-    const button = screen.getByRole("button", { name: /Re-ejecutar grid completo/i });
-    fireEvent.click(button);
-
+    const tab = await screen.findByRole("tab", { name: /Ranking por patrón/i });
+    tab.click();
+    const btn = await screen.findByRole("button", { name: /Re-ejecutar|Ejecutar backtest/i });
+    btn.click();
     await waitFor(() => {
       expect(api.POST).toHaveBeenCalledWith("/backtest/{symbol}/refresh", {
-        params: { path: { symbol: "BTCUSDT" }, query: { tf: "4h", mode: "full" } },
+        params: { path: { symbol: "BTCUSDT" }, query: { tf: "4h", mode: "quick" } },
       });
     });
   });

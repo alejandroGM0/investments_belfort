@@ -40,13 +40,13 @@ export function SymbolSelect({ navigateOnChange = false }: SymbolSelectProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        className="inline-flex h-8 w-32 items-center justify-between gap-1 rounded-lg border border-border bg-background px-2.5 font-mono text-sm font-medium transition-colors hover:bg-muted"
+        className="inline-flex h-10 w-36 items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-4 font-mono text-sm font-bold shadow-sm transition-all hover:bg-accent/50 hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
         aria-label="Select symbol"
       >
-        {symbol}
-        <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+        <span className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">{symbol}</span>
+        <ChevronsUpDown className="h-4 w-4 text-muted-foreground/70" />
       </PopoverTrigger>
-      <PopoverContent className="w-52 p-0" align="start">
+      <PopoverContent className="w-56 p-1 rounded-xl shadow-lg border-border/50" align="start">
         <Command>
           <CommandInput placeholder="Buscar cripto..." />
           <CommandList>

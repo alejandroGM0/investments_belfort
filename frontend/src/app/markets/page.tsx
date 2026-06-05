@@ -31,7 +31,9 @@ export default function MarketsPage() {
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <TrendingUp className="h-6 w-6" /> Ranking de Mercados
           </h1>
-          <p className="text-sm text-muted-foreground">Ordenado por claridad de señal técnica · {timeframe}</p>
+          <p className="text-sm text-muted-foreground">
+            Ordenado por claridad de señal técnica · {timeframe} · precios en vivo cada ~5s
+          </p>
         </div>
       </div>
 

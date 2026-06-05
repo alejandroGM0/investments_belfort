@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import {
   createChart,
   ColorType,
@@ -30,6 +31,7 @@ interface PriceChartProps {
   overlays?: ChartOverlays;
   overlayData?: ChartOverlaysData;
   height?: number;
+  className?: string;
 }
 
 const EMA_COLORS: Record<number, string> = {
@@ -37,12 +39,18 @@ const EMA_COLORS: Record<number, string> = {
   50: "#a855f7",
 };
 
+function readSize(el: HTMLElement) {
+  const { width, height } = el.getBoundingClientRect();
+  return { width: Math.floor(width), height: Math.floor(height) };
+}
+
 export function PriceChart({
   candles,
   markers = [],
   overlays = { patterns: true, levels: true, ema: false, projection: true, setup: true },
   overlayData,
-  height = 480,
+  height,
+  className,
 }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -56,9 +64,11 @@ export function PriceChart({
   const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const el = containerRef.current;
+    if (!el) return;
 
-    const chart = createChart(containerRef.current, {
+    const { width, height: h } = readSize(el);
+    const chart = createChart(el, {
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: isDark ? "#a1a1aa" : "#71717a",
@@ -70,8 +80,8 @@ export function PriceChart({
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: isDark ? "#3f3f46" : "#d4d4d8" },
       timeScale: { borderColor: isDark ? "#3f3f46" : "#d4d4d8", timeVisible: true },
-      width: containerRef.current.clientWidth,
-      height,
+      width: Math.max(width, 1),
+      height: Math.max(h, 1),
     });
 
     const series = chart.addSeries(CandlestickSeries, {
@@ -87,13 +97,20 @@ export function PriceChart({
     seriesRef.current = series;
     markersRef.current = createSeriesMarkers(series);
 
-    const resizeObserver = new ResizeObserver(([entry]) => {
-      chart.applyOptions({ width: entry.contentRect.width });
-    });
-    resizeObserver.observe(containerRef.current);
+    const resize = () => {
+      if (!containerRef.current || !chartRef.current) return;
+      const next = readSize(containerRef.current);
+      if (next.width > 0 && next.height > 0) {
+        chartRef.current.applyOptions({ width: next.width, height: next.height });
+      }
+    };
+
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(el);
+    requestAnimationFrame(resize);
 
     return () => {
-      resizeObserver.disconnect();
+      ro.disconnect();
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
@@ -103,7 +120,7 @@ export function PriceChart({
       emaSeriesRefs.current = [];
       priceLineRefs.current = [];
     };
-  }, [isDark, height]);
+  }, [isDark]);
 
   useEffect(() => {
     if (!seriesRef.current || !candles.length) return;
@@ -261,5 +278,14 @@ export function PriceChart({
     }
   }, [overlayData, overlays.levels, overlays.ema, overlays.projection, overlays.setup]);
 
-  return <div ref={containerRef} className="w-full" style={{ height }} />;
+  const resolvedHeight =
+    height != null ? height : className?.includes("h-full") ? "100%" : 520;
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn("w-full", className)}
+      style={{ height: resolvedHeight }}
+    />
+  );
 }

@@ -7,16 +7,16 @@ import { cn } from "@/lib/utils";
 export function TimeframeSelect() {
   const { timeframe, setTimeframe } = useAppStore();
   return (
-    <div className="flex items-center rounded-md border bg-muted/40 p-0.5">
+    <div className="flex items-center rounded-xl border border-border/50 bg-muted/30 p-1 backdrop-blur-sm shadow-inner">
       {TIMEFRAMES.map((tf) => (
         <button
           key={tf}
           onClick={() => setTimeframe(tf as Timeframe)}
           className={cn(
-            "rounded px-2.5 py-1 text-xs font-medium transition-all",
+            "rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200",
             timeframe === tf
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-card text-foreground shadow-sm ring-1 ring-border/50"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
           {tf}

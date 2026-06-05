@@ -92,8 +92,11 @@ export function ConfluenceScore({ score, size = "md", className }: ConfluenceSco
         <div className="space-y-3">
           <div>
             <h4 className="font-semibold text-sm">Score de Confluencia (Técnico)</h4>
-            <p className="text-xs text-muted-foreground mt-1">
-              Evalúa la fuerza general del activo en base a múltiples factores, otorgando una puntuación de 0 a 100.
+            <p className="text-[11px] text-muted-foreground mt-1 mb-1">
+              <strong>¿Qué es la confluencia?</strong> Es cuando múltiples señales y factores técnicos apuntan en la misma dirección, aumentando la probabilidad de una operación.
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Este score evalúa esa fuerza general y otorga una puntuación de 0 a 100 basada en:
             </p>
           </div>
           <div className="space-y-2 text-xs">

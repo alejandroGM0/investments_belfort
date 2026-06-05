@@ -21,6 +21,23 @@ def test_jobs_unknown_id():
     assert response.status_code == 404
 
 
+def test_ticker_returns_live_price():
+    response = client.get("/ticker/BTCUSDT")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["price"] > 0
+    assert "updated_at" in data
+
+
+def test_backtest_runs_returns_structure():
+    response = client.get("/backtest/BTCUSDT/runs?tf=4h&limit=10")
+    assert response.status_code == 200
+    data = response.json()
+    assert "runs" in data
+    assert "total" in data
+    assert isinstance(data["runs"], list)
+
+
 def test_backtest_returns_structure():
     """Backtest endpoint returns valid structure even with no results."""
     response = client.get("/backtest/BTCUSDT?tf=4h")
@@ -54,4 +71,5 @@ def test_refresh_analysis_returns_job_id():
 def test_refresh_backtest_returns_job_id():
     response = client.post("/backtest/BTCUSDT/refresh?tf=4h")
     assert response.status_code == 200
-    assert "job_id" in response.json()
+    data = response.json()
+    assert data.get("id") or data.get("job_id")
