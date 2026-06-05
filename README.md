@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="docs/images/banner.png" alt="Investments Belfort Banner" width="100%">
-</p>
 
 <h1 align="center">📈 Investments Belfort</h1>
 
@@ -13,17 +10,18 @@
 </div>
 <br>
 
-**Investments Belfort** is a comprehensive, institutional-grade cryptocurrency investment analysis platform. It features an advanced technical analysis engine for pattern recognition (candlesticks, chart patterns, support/resistance, confluences), a powerful massive backtesting engine driven by **VectorBT** and **DuckDB**, and a modern, responsive, and aesthetically stunning web interface built with **Next.js**.
+**Investments Belfort** is a full-stack crypto analysis and backtesting platform I've been building. Instead of relying on gut feelings, it uses a Python backend (TA-Lib) to automatically spot candlestick patterns, support/resistance levels, and market confluences. 
+
+To prove if these setups actually work, the platform runs massive, highly concurrent backtests using **VectorBT** and **DuckDB**, churning through millions of simulated trades in seconds. Everything is wrapped up in a sleek, fast **Next.js** web interface that brings the data to life.
 
 ---
 
-## ✨ Key Features
+## ✨ What it actually does
 
-* **Advanced Technical Analysis Engine**: Automatically detects complex candlestick patterns, structural support/resistance levels, and multi-timeframe confluences.
-* **Massive Concurrent Backtesting**: Leverages `VectorBT` and `DuckDB` to run millions of simulated trades across grid optimizations in seconds.
-* **Real-Time Sentiment Analysis**: Aggregates market sentiment using live data from Reddit, News RSS feeds, and leading crypto publications.
-* **Sleek & Professional Web UI**: A beautiful, responsive Next.js frontend with dark mode, glassmorphism design, and interactive high-performance charting.
-* **High-Performance API**: A fully typed FastAPI backend engineered for low-latency calculations and optimized data pipelining.
+* **Pattern & Level Detection**: The Python backend crunches OHLCV data to find exact technical setups (engulfing patterns, multi-timeframe support/resistance, etc.) without human bias.
+* **Brute-Force Backtesting**: Thanks to `VectorBT` and `DuckDB`, you can run a grid search across thousands of parameter combinations instantly to see what actually turns a profit.
+* **Market Sentiment**: Pulls live data from Reddit and crypto news feeds to give you a read on what the market is feeling.
+* **Modern Stack**: Built with a FastAPI backend for speed and a Next.js (React 19) frontend that looks and feels like a premium trading terminal.
 
 ---
 
