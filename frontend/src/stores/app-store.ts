@@ -25,7 +25,7 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       symbol: env.defaultSymbol,
       timeframe: env.defaultTimeframe,
-      history: "5y",
+      history: "2y",
       watchlist: WATCHLIST_DEFAULT,
       lastRefreshed: null,
       initJobIds: null,

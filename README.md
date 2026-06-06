@@ -196,16 +196,6 @@ The monorepo is organized as follows:
 
 ---
 
-## 🐺 The Wolf's Disclaimer
-
-> *"You know what a Fugazi is? Fugayzi, fugazi. It's a whazy. It's a woozie. It's fairy dust."*
-
-While Investments Belfort provides institutional-grade analytics to prevent you from investing in *fairy dust* and *fugazis*, this platform is a **personal experiment** and does not constitute financial advice.
-
-**"I'm not leaving! I'm not leaving!"** — *The DuckDB backend when running 10,000 parallel grid optimization backtests.* 🥁🦍
-
----
-
 ## 🛡️ License
 
 Personal experiment without explicit commercial license. All rights reserved.
