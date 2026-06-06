@@ -10,4 +10,4 @@ export const SENTIMENT_WINDOWS: SentimentWindow[] = ["1h", "4h", "24h", "7d"];
 export type Timeframe = "1h" | "4h" | "1D" | "1W";
 export const TIMEFRAMES: Timeframe[] = ["1h", "4h", "1D", "1W"];
 
-export const WATCHLIST_DEFAULT = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "AVAX", "DOT", "MATIC", "LINK"];
+export const WATCHLIST_DEFAULT = ["BTC", "ETH"];
