@@ -25,6 +25,14 @@ To prove if these setups actually work, the platform runs massive, highly concur
 
 ---
 
+## 🐺 The Wolf's Disclaimer
+
+> *"Sell me this pen! ... No wait, sell me this algorithmic pattern recognition engine that literally brute-forces the market so we don't end up working at McDonald's!"*
+
+Investments Belfort is a **personal experiment** designed to bring Wall Street quant tools to your laptop. It is strictly for educational purposes and does not constitute financial advice. If you YOLO your life savings because a `cdl_engulfing` pattern told you to, that's on you!
+
+---
+
 ## 📸 Screenshots (Web Interface)
 
 Explore the Belfort user interface in action:
