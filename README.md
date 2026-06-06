@@ -43,7 +43,8 @@ Get a high-level overview of the market with real-time rankings and a beautifull
 
 ### 📈 Detailed Technical Analysis (Patterns, Structure & Confluences)
 Dive deep into the charts with advanced candlestick pattern recognition, support/resistance plotting, and multiple technical indicators.
-![Technical Analysis](docs/images/technical.png)
+![Technical Analysis - BTC](docs/images/technical.png)
+![Technical Analysis - ADA](docs/images/technical_ada.png)
 
 ### 🧪 Strategy Backtesting & Grid Optimization
 Run massive, highly concurrent backtests and optimize your trading strategies using our robust grid optimization interface.
