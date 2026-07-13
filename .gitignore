@@ -26,6 +26,7 @@ next-env.d.ts
 .DS_Store
 .idea/
 .vscode/
+.cursor/
 *.swp
 
 # Test / coverage
